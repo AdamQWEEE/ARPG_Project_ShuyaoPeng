@@ -106,6 +106,7 @@ namespace StarterAssets
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
         public bool isAttack;
+        public int attack_num;
 
         private const float _threshold = 0.01f;
 
@@ -161,6 +162,30 @@ namespace StarterAssets
             GroundedCheck();
             Move();
             Attack();
+
+            AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+
+            if (stateInfo.IsName("combo_01_1")|| stateInfo.IsName("combo_01_2") || stateInfo.IsName("combo_01_3"))
+            {
+                if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.8f)
+                {
+                    _animator.applyRootMotion = true;
+                }
+                else
+                {
+                    _animator.applyRootMotion = false;
+                    attack_num = 0;
+                    _animator.SetInteger("Attack_num", attack_num);
+                }
+                //_animator.applyRootMotion = true;
+                // 当前正在播放名为“你的动画状态名称”的动画
+                Debug.Log("当前动画是：你的动画状态名称");
+            }
+            else
+            {
+                _animator.applyRootMotion = false;
+                
+            }
         }
 
         private void LateUpdate()
@@ -215,16 +240,20 @@ namespace StarterAssets
 
         private void Attack()
         {
-            if(Input.GetKeyDown(KeyCode.F))
+            if(_input.attack)
             {
                 _animator.applyRootMotion=true;
+                attack_num+=1;
+                _animator.SetInteger("Attack_num",attack_num);
                 _animator.SetTrigger("Attack");
+                _input.attack = false;
             }
         }
 
 
         private void Move()
         {
+            
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
@@ -267,7 +296,8 @@ namespace StarterAssets
             // if there is a move input rotate player when the player is moving
             if (_input.move != Vector2.zero)
             {
-                _animator.applyRootMotion = false;
+                
+                //_animator.applyRootMotion = false;
                 _targetRotation = Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg +
                                   _mainCamera.transform.eulerAngles.y;
                 float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
@@ -275,6 +305,8 @@ namespace StarterAssets
 
                 // rotate to face input direction relative to camera position
                 transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                //Animator animator = GetComponent<Animator>();
+                
             }
 
 
