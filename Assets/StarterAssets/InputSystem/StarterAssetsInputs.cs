@@ -14,6 +14,7 @@ namespace StarterAssets
 		public bool jump;
 		public bool sprint;
 		public bool attack;
+		public bool sneak;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -51,9 +52,17 @@ namespace StarterAssets
             AttackInput(value.isPressed);
         }
 
+		public void OnSneak(InputValue value)
+		{
+			SneakInput(value.isPressed);
+		}
+
 
 #endif
-
+		private void SneakInput(bool newSneakState)
+		{
+			sneak=newSneakState;
+		}
         private void AttackInput(bool newAttackState)
         {
             attack = newAttackState;

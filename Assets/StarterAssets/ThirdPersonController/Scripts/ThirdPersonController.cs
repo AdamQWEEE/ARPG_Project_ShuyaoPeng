@@ -160,8 +160,16 @@ namespace StarterAssets
 
             JumpAndGravity();
             GroundedCheck();
-            Move();
+            if (!_animator.GetBool("isSneak"))
+            {
+                Move();
+            }               
+            else
+            {
+                Sneak();
+            }
             Attack();
+            ChangeToSneak();
 
             AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
 
@@ -180,6 +188,10 @@ namespace StarterAssets
                 //_animator.applyRootMotion = true;
                 // 当前正在播放名为“你的动画状态名称”的动画
                 Debug.Log("当前动画是：你的动画状态名称");
+            }
+            else if (_animator.GetBool("isSneak"))
+            {
+                _animator.applyRootMotion = true;
             }
             else
             {
@@ -250,9 +262,50 @@ namespace StarterAssets
             }
         }
 
+        private void ChangeToSneak()
+        {
+            if (_input.sneak)
+            {
+                Debug.Log("变为潜行"+ _animator.GetBool("isSneak"));
+                _animator.SetBool("isSneak", !_animator.GetBool("isSneak"));
+                _input.sneak=false;
+            }
+        }
 
+        private void Sneak()
+        {
+            Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
+            //Debug.Log("x方向位移"+_input.move.x);
+            //Debug.Log("y方向位移"+_input.move.y);
+            // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
+            // if there is a move input rotate player when the player is moving
+            if (_input.move != Vector2.zero)
+            {
+
+                //_animator.applyRootMotion = false;
+
+                _targetRotation = _mainCamera.transform.eulerAngles.y;//潜行方向始终对着摄像机方向
+                float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
+                    RotationSmoothTime);
+
+                // rotate to face input direction relative to camera position
+                //if(_input.move.x>0)
+                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                //Animator animator = GetComponent<Animator>();
+
+            }
+            float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), _input.move.x, Time.deltaTime * 10f);
+            float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), _input.move.y, Time.deltaTime * 10f);
+            /*_animator.SetFloat("inputX", _input.move.x);
+            _animator.SetFloat("inputY",_input.move.y);*/
+
+            _animator.SetFloat("inputX", inputX_blend);
+            _animator.SetFloat("inputY", inputY_blend);
+
+        }
         private void Move()
         {
+
             
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
@@ -291,7 +344,8 @@ namespace StarterAssets
 
             // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
-
+            //Debug.Log("x方向位移"+_input.move.x);
+            //Debug.Log("y方向位移"+_input.move.y);
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
             if (_input.move != Vector2.zero)
@@ -312,6 +366,7 @@ namespace StarterAssets
 
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
+            
             // move the player
             _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
                              new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
