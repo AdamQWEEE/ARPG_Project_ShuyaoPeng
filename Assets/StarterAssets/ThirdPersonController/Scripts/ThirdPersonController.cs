@@ -1,6 +1,8 @@
 ﻿ using UnityEngine;
 #if ENABLE_INPUT_SYSTEM 
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
+using System.Linq;
 #endif
 
 /* Note: animations are called via the controller for both the character and capsule using animator null checks
@@ -124,6 +126,20 @@ namespace StarterAssets
             }
         }
 
+        private static readonly List<string> comboStateNames = new List<string>
+        {
+            "combo_01_1",
+            "combo_01_2",
+            "combo_01_3",
+            "combo_04_1",
+            "combo_04_2",
+            "combo_04_3",
+            "combo_04_4",
+            "combo_04_5",
+        // 之后有新的连招，直接在这里加就行
+        
+        };
+
 
         private void Awake()
         {
@@ -170,10 +186,13 @@ namespace StarterAssets
             }
             Attack();
             ChangeToSneak();
+            ChangeCombo();
 
             AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
 
-            if (stateInfo.IsName("combo_01_1")|| stateInfo.IsName("combo_01_2") || stateInfo.IsName("combo_01_3"))
+            bool isInCombo = comboStateNames.Any(name => stateInfo.IsName(name));
+
+            if (isInCombo)
             {
                 if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.8f)
                 {
@@ -259,6 +278,7 @@ namespace StarterAssets
                 _animator.SetInteger("Attack_num",attack_num);
                 _animator.SetTrigger("Attack");
                 _input.attack = false;
+                _animator.SetBool("isSneak", false);
             }
         }
 
@@ -269,6 +289,14 @@ namespace StarterAssets
                 Debug.Log("变为潜行"+ _animator.GetBool("isSneak"));
                 _animator.SetBool("isSneak", !_animator.GetBool("isSneak"));
                 _input.sneak=false;
+            }
+        }
+
+        private void ChangeCombo()
+        {
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                _animator.SetBool("changeCombo", !_animator.GetBool("changeCombo"));
             }
         }
 
