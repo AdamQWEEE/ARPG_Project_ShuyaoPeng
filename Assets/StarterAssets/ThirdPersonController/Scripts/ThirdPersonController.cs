@@ -114,7 +114,11 @@ namespace StarterAssets
 
         private bool _hasAnimator;
         public bool canMove;
+        private bool roll_accelerate;
         private AnimatorStateInfo stateInfo;
+
+    
+
 
         private bool IsCurrentDeviceMouse
         {
@@ -181,6 +185,7 @@ namespace StarterAssets
             
             Attack();
             Roll();
+            RollAccelerate();
             
             ChangeToSneak();
             ChangeCombo();
@@ -206,17 +211,25 @@ namespace StarterAssets
                 // 当前正在播放名为“你的动画状态名称”的动画
                 Debug.Log("当前动画是：你的动画状态名称");
             }
-            else if(stateInfo.IsName("Dodge_Roll_Back"))
+            else if(stateInfo.IsName("Dodge Roll"))
             {
-                if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.8f)
+                if(_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.3f)
+                {
+                    _animator.applyRootMotion = false;
+                    
+                    //canMove = false;
+                }
+                else if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime >0.3f && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.8f)
                 {
                     canMove = false;
+                    roll_accelerate = false;
                     _animator.applyRootMotion = true;
                 }
                 else
                 {
                     _animator.applyRootMotion = false;
                     canMove = true;
+                    
 
                 }
             }
@@ -314,20 +327,36 @@ namespace StarterAssets
                 }
             }
         }
-
+        private void RollAccelerate()
+        {
+            if (roll_accelerate)
+            {
+                _controller.Move(transform.forward * 5f * Time.deltaTime);
+            }
+        }
         private void Roll()
         {
             if (_input.roll)
             {
-                if (canMove) { 
-                    _animator.applyRootMotion = true;
-                    _animator.SetTrigger("Roll");              
-                
-                    canMove=false;
+                if (canMove) {
+                    // 1. 计算翻滚方向（这里举例：相机方向 + 输入方向）
+                    
+
+
+                    //_animator.applyRootMotion = true;
+                    _animator.SetTrigger("Roll");
+                    roll_accelerate = true;
+
+
+                    canMove =false;
+
+                   
                 }
                 _input.roll = false;
             }
         }
+
+        
 
         private void ChangeToSneak()
         {

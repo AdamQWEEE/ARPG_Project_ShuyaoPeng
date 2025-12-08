@@ -46,7 +46,7 @@ ModelImporter:
       name: Dodge_Roll_Forward
       takeName: Take 001
       internalID: 0
-      firstFrame: 2.6
+      firstFrame: 0
       lastFrame: 34
       wrapMode: 0
       orientationOffsetY: 0
