@@ -176,15 +176,9 @@ namespace StarterAssets
 
             JumpAndGravity();
             GroundedCheck();
-            if (!_animator.GetBool("isSneak"))
-            {
-                Move();
-            }               
-            else
-            {
-                Sneak();
-            }
+            
             Attack();
+            Roll();
             ChangeToSneak();
             ChangeCombo();
 
@@ -208,6 +202,11 @@ namespace StarterAssets
                 // 当前正在播放名为“你的动画状态名称”的动画
                 Debug.Log("当前动画是：你的动画状态名称");
             }
+            else if(stateInfo.IsName("Dodge_Roll_Back"))
+            {
+                _animator.applyRootMotion = true;
+            }
+
             else if (_animator.GetBool("isSneak"))
             {
                 _animator.applyRootMotion = true;
@@ -215,8 +214,22 @@ namespace StarterAssets
             else
             {
                 _animator.applyRootMotion = false;
-                
+
             }
+
+            if (!stateInfo.IsName("Dodge_Roll_Back"))
+            {
+
+                if (!_animator.GetBool("isSneak"))
+                {
+                    Move();
+                }
+                else
+                {
+                    Sneak();
+                }
+            }
+            //Debug.Log(_input.attack);
         }
 
         private void LateUpdate()
@@ -271,14 +284,31 @@ namespace StarterAssets
 
         private void Attack()
         {
-            if(_input.attack)
+            if(_input.attack )
             {
-                _animator.applyRootMotion=true;
-                attack_num+=1;
-                _animator.SetInteger("Attack_num",attack_num);
-                _animator.SetTrigger("Attack");
                 _input.attack = false;
-                _animator.SetBool("isSneak", false);
+                if(GameObject.Find("Dialogue Panel") == null)
+                {
+
+                    _animator.applyRootMotion=true;
+                    attack_num+=1;
+                    _animator.SetInteger("Attack_num",attack_num);
+                    _animator.SetTrigger("Attack");
+                    //_input.attack = false;
+                    _animator.SetBool("isSneak", false);
+                }
+            }
+        }
+
+        private void Roll()
+        {
+            if (_input.roll)
+            {
+                _animator.applyRootMotion = true;
+                _animator.SetTrigger("Roll");
+                
+
+                _input.roll = false;
             }
         }
 
