@@ -113,6 +113,8 @@ namespace StarterAssets
         private const float _threshold = 0.01f;
 
         private bool _hasAnimator;
+        public bool canMove;
+        private AnimatorStateInfo stateInfo;
 
         private bool IsCurrentDeviceMouse
         {
@@ -179,10 +181,12 @@ namespace StarterAssets
             
             Attack();
             Roll();
+            
             ChangeToSneak();
             ChangeCombo();
 
-            AnimatorStateInfo stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+            stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+            
 
             bool isInCombo = comboStateNames.Any(name => stateInfo.IsName(name));
 
@@ -204,7 +208,17 @@ namespace StarterAssets
             }
             else if(stateInfo.IsName("Dodge_Roll_Back"))
             {
-                _animator.applyRootMotion = true;
+                if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.8f)
+                {
+                    canMove = false;
+                    _animator.applyRootMotion = true;
+                }
+                else
+                {
+                    _animator.applyRootMotion = false;
+                    canMove = true;
+
+                }
             }
 
             else if (_animator.GetBool("isSneak"))
@@ -217,7 +231,7 @@ namespace StarterAssets
 
             }
 
-            if (!stateInfo.IsName("Dodge_Roll_Back"))
+            if (canMove)
             {
 
                 if (!_animator.GetBool("isSneak"))
@@ -229,6 +243,7 @@ namespace StarterAssets
                     Sneak();
                 }
             }
+            
             //Debug.Log(_input.attack);
         }
 
@@ -304,10 +319,12 @@ namespace StarterAssets
         {
             if (_input.roll)
             {
-                _animator.applyRootMotion = true;
-                _animator.SetTrigger("Roll");
+                if (canMove) { 
+                    _animator.applyRootMotion = true;
+                    _animator.SetTrigger("Roll");              
                 
-
+                    canMove=false;
+                }
                 _input.roll = false;
             }
         }
