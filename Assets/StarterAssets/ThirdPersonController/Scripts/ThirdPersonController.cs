@@ -116,8 +116,12 @@ namespace StarterAssets
         public bool canMove;
         private bool roll_accelerate;
         private AnimatorStateInfo stateInfo;
+        public bool canChainNext;//是否进入连招区间
+        public bool bufferAttack;
+        public bool canImmediatelyAttack;
 
-    
+
+
 
 
         private bool IsCurrentDeviceMouse
@@ -209,7 +213,7 @@ namespace StarterAssets
                 }
                 //_animator.applyRootMotion = true;
                 // 当前正在播放名为“你的动画状态名称”的动画
-                Debug.Log("当前动画是：你的动画状态名称");
+                //Debug.Log("当前动画是：你的动画状态名称");
             }
             else if(stateInfo.IsName("Dodge Roll"))
             {
@@ -312,20 +316,73 @@ namespace StarterAssets
 
         private void Attack()
         {
-            if(_input.attack )
+            if ((canChainNext || attack_num==0) && GameObject.Find("Dialogue Panel") == null)
             {
-                _input.attack = false;
-                if(GameObject.Find("Dialogue Panel") == null)
+                if (bufferAttack)
+                {
+                    ExecuteAttack();
+                    bufferAttack = false;
+                }
+                else
                 {
 
-                    _animator.applyRootMotion=true;
-                    attack_num+=1;
-                    _animator.SetInteger("Attack_num",attack_num);
-                    _animator.SetTrigger("Attack");
-                    //_input.attack = false;
-                    _animator.SetBool("isSneak", false);
+                    canImmediatelyAttack = true;
+
                 }
             }
+
+            if (_input.attack )
+            {
+                _input.attack = false;
+                
+                if (GameObject.Find("Dialogue Panel") == null)
+                {
+                    if (attack_num == 0)
+                    {
+                        canChainNext = false;
+                        canImmediatelyAttack = true;
+                        //ExecuteAttack();
+                    }
+                    else
+                    {
+                        
+                    }
+
+                    if (canImmediatelyAttack)
+                    {
+                        ExecuteAttack();
+                        canImmediatelyAttack = false;
+                    }
+                    else
+                    {
+                        bufferAttack = true;  // 预输入
+                    }
+
+                    
+                }
+            }
+        }
+
+        private void ExecuteAttack()
+        {
+            _animator.applyRootMotion = true;
+            attack_num += 1;
+            _animator.SetInteger("Attack_num", attack_num);
+            _animator.SetTrigger("Attack");
+            //_input.attack = false;
+            _animator.SetBool("isSneak", false);
+            canImmediatelyAttack = false;
+        }
+
+        public void OpenComboWindow()
+        {
+            canChainNext = true;
+            Debug.Log("可以切换连招");
+        }
+
+        public void CloseComboWindow()
+        {
+            canChainNext = false;
         }
         private void RollAccelerate()
         {
