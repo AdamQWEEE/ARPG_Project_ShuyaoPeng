@@ -207,9 +207,12 @@ namespace StarterAssets
                 }
                 else
                 {
+                    
+
                     _animator.applyRootMotion = false;
-                    attack_num = 0;
-                    _animator.SetInteger("Attack_num", attack_num);
+                    //attack_num = 0;
+                    //_animator.SetInteger("Attack_num", attack_num);
+                    
                 }
                 //_animator.applyRootMotion = true;
                 // 当前正在播放名为“你的动画状态名称”的动画
@@ -321,12 +324,16 @@ namespace StarterAssets
                 if (bufferAttack)
                 {
                     ExecuteAttack();
+                    Debug.Log("触发预输入");
                     bufferAttack = false;
                 }
                 else
                 {
-
                     canImmediatelyAttack = true;
+                    if (canChainNext)
+                    {
+                        
+                    }
 
                 }
             }
@@ -351,6 +358,7 @@ namespace StarterAssets
                     if (canImmediatelyAttack)
                     {
                         ExecuteAttack();
+                        //Debug.Log("进行连招");
                         canImmediatelyAttack = false;
                     }
                     else
@@ -365,24 +373,34 @@ namespace StarterAssets
 
         private void ExecuteAttack()
         {
+            Debug.Log("执行一次");
             _animator.applyRootMotion = true;
-            attack_num += 1;
+            attack_num =attack_num+1;
             _animator.SetInteger("Attack_num", attack_num);
             _animator.SetTrigger("Attack");
             //_input.attack = false;
             _animator.SetBool("isSneak", false);
-            canImmediatelyAttack = false;
+
+            canImmediatelyAttack = false;            
+            canChainNext = false;
+            bufferAttack = false;
         }
 
         public void OpenComboWindow()
         {
             canChainNext = true;
-            Debug.Log("可以切换连招");
+            //Debug.Log("可以切换连招");
         }
 
         public void CloseComboWindow()
         {
             canChainNext = false;
+        }
+
+        public void ResetCombo()
+        {
+            attack_num = 0;
+            _animator.SetInteger("Attack_num", attack_num);
         }
         private void RollAccelerate()
         {
