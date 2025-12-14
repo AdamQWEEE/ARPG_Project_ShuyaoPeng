@@ -49,4 +49,64 @@ public class SwordVFX : MonoBehaviour
         }
         swordEffects[2].SetActive(true);
     }
+
+    public void ShowVFX4()
+    {
+        foreach (var effect in swordEffects)
+        {
+            if (effect != null)
+            {
+                effect.SetActive(false);
+            }
+        }
+        swordEffects[3].SetActive(true);
+    }
+
+    public void ShowVFX5()
+    {
+        foreach (var effect in swordEffects)
+        {
+            if (effect != null)
+            {
+                effect.SetActive(false);
+            }
+        }
+        swordEffects[4].SetActive(true);
+    }
+
+    public void ShowVFX6()
+    {
+        foreach (var effect in swordEffects)
+        {
+            if (effect != null)
+            {
+                effect.SetActive(false);
+            }
+        }
+        swordEffects[5].SetActive(true);
+    }
+
+    public void ShowVFX7()
+    {
+        foreach (var effect in swordEffects)
+        {
+            if (effect != null)
+            {
+                effect.SetActive(false);
+            }
+        }
+        swordEffects[6].SetActive(true);
+    }
+
+    public void ShowVFX8()
+    {
+        foreach (var effect in swordEffects)
+        {
+            if (effect != null)
+            {
+                effect.SetActive(false);
+            }
+        }
+        swordEffects[7].SetActive(true);
+    }
 }
