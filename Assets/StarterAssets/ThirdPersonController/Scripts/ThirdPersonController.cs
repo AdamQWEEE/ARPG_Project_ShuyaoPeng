@@ -120,8 +120,9 @@ namespace StarterAssets
         public bool canChainNext;//是否进入连招区间
         public bool bufferAttack;
         public bool canRollAttack;
-        private bool isRolling;
+        public bool isRolling;
         public bool canImmediatelyAttack;
+        private bool isTargeting;
         public PlayerStateUI playerState;
 
 
@@ -200,7 +201,9 @@ namespace StarterAssets
             ChangeMovement();
 
             stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
-            
+            isTargeting = _animator.GetFloat("LockOn") == 1;
+
+
 
             bool isInCombo = comboStateNames.Any(name => stateInfo.IsName(name));
 
@@ -233,7 +236,7 @@ namespace StarterAssets
                     
                     //canMove = false;
                 }
-                else if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime >0.3f && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.8f)
+                else if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime >0.3f && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.9f)
                 {
                     canMove = false;
                     roll_accelerate = false;
@@ -261,18 +264,18 @@ namespace StarterAssets
 
             }
 
-            if (canMove)
-            {
+            
 
-                if (_animator.GetBool("isSneak") || _animator.GetFloat("LockOn") == 1)
-                {
-                    EightDirectionMove();                    
-                }
-                else
-                {
-                    Move();
-                }
+            if (_animator.GetBool("isSneak") || isTargeting)
+            {
+                EightDirectionMove();                    
             }
+            else
+            {
+                if(canMove)
+                    Move();
+            }
+            
 
             
 
@@ -447,9 +450,9 @@ namespace StarterAssets
         {
             if (_input.roll)
             {
-                if (canMove && playerState.energyBar.fillAmount > playerState.energy_per_attack) {
+                if ((canMove ||isTargeting) && playerState.energyBar.fillAmount > playerState.energy_per_attack) {
                     // 1. 计算翻滚方向（这里举例：相机方向 + 输入方向）
-                    if(_animator.GetFloat("LockOn") == 1)
+                    if(isTargeting)
                     {
                         Vector2 move = _input.move;
 
@@ -517,7 +520,11 @@ namespace StarterAssets
                 if(_animator.GetFloat("LockOn")==0f)
                     _animator.SetFloat("LockOn", 1f);
                 else
+                {
                     _animator.SetFloat("LockOn", 0f);
+                    canMove = true;
+                }
+                    
             }
         }
 
