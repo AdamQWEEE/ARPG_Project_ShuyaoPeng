@@ -115,11 +115,14 @@ namespace StarterAssets
         private bool _hasAnimator;
         public bool canMove;
         private bool roll_accelerate;
+        Vector3 _rollDir;
         private AnimatorStateInfo stateInfo;
         public bool canChainNext;//是否进入连招区间
         public bool bufferAttack;
+        public bool canRollAttack;
+        private bool isRolling;
         public bool canImmediatelyAttack;
-
+        public PlayerStateUI playerState;
 
 
 
@@ -178,6 +181,7 @@ namespace StarterAssets
             // reset our timeouts on start
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
+            playerState = GetComponent<PlayerStateUI>();
         }
 
         private void Update()
@@ -193,6 +197,7 @@ namespace StarterAssets
             
             ChangeToSneak();
             ChangeCombo();
+            ChangeMovement();
 
             stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
             
@@ -223,6 +228,8 @@ namespace StarterAssets
                 if(_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.3f)
                 {
                     _animator.applyRootMotion = false;
+                    canRollAttack=false;
+                    
                     
                     //canMove = false;
                 }
@@ -234,14 +241,17 @@ namespace StarterAssets
                 }
                 else
                 {
-                    _animator.applyRootMotion = false;
-                    canMove = true;
+                    if(_animator.GetFloat("LockOn") != 1)
+                    {
+                        _animator.applyRootMotion = false;
+                        canMove = true;
+                    }
                     
 
                 }
             }
 
-            else if (_animator.GetBool("isSneak"))
+            else if (_animator.GetBool("isSneak")|| _animator.GetFloat("LockOn")==1)
             {
                 _animator.applyRootMotion = true;
             }
@@ -254,16 +264,18 @@ namespace StarterAssets
             if (canMove)
             {
 
-                if (!_animator.GetBool("isSneak"))
+                if (_animator.GetBool("isSneak") || _animator.GetFloat("LockOn") == 1)
                 {
-                    Move();
+                    EightDirectionMove();                    
                 }
                 else
                 {
-                    Sneak();
+                    Move();
                 }
             }
+
             
+
             //Debug.Log(_input.attack);
         }
 
@@ -319,21 +331,22 @@ namespace StarterAssets
 
         private void Attack()
         {
-            if ((canChainNext || attack_num==0) && GameObject.Find("Dialogue Panel") == null)
+            bool canStartFirstAttackNow =(attack_num == 0) && (!isRolling || canRollAttack); 
+            if ((canChainNext || canStartFirstAttackNow) && GameObject.Find("Dialogue Panel") == null)
             {
                 if (bufferAttack)
                 {
-                    ExecuteAttack();
-                    Debug.Log("触发预输入");
-                    bufferAttack = false;
+                    if (playerState.energyBar.fillAmount > playerState.energy_per_attack) { 
+
+                        ExecuteAttack();
+                        Debug.Log("触发预输入");
+                        bufferAttack = false;
+                    }
                 }
                 else
                 {
                     canImmediatelyAttack = true;
-                    if (canChainNext)
-                    {
-                        
-                    }
+                    
 
                 }
             }
@@ -346,20 +359,26 @@ namespace StarterAssets
                 {
                     if (attack_num == 0)
                     {
+                        if (isRolling && !canRollAttack)
+                        {
+                            bufferAttack = true;
+                            return;
+                        }
                         canChainNext = false;
                         canImmediatelyAttack = true;
                         //ExecuteAttack();
                     }
-                    else
-                    {
-                        
-                    }
+                    
 
                     if (canImmediatelyAttack)
                     {
-                        ExecuteAttack();
-                        //Debug.Log("进行连招");
-                        canImmediatelyAttack = false;
+                        if (playerState.energyBar.fillAmount > playerState.energy_per_attack)
+                        {
+
+                            ExecuteAttack();
+                            //Debug.Log("进行连招");
+                            canImmediatelyAttack = false;
+                        }
                     }
                     else
                     {
@@ -380,10 +399,12 @@ namespace StarterAssets
             _animator.SetTrigger("Attack");
             //_input.attack = false;
             _animator.SetBool("isSneak", false);
-
+            playerState.ConsumeEnergy();
+            playerState.recoverEnergy = false;
             canImmediatelyAttack = false;            
             canChainNext = false;
             bufferAttack = false;
+            
         }
 
         public void OpenComboWindow()
@@ -396,11 +417,19 @@ namespace StarterAssets
         {
             canChainNext = false;
         }
+        public void OpenRollAttackWindow()
+        {
+            canRollAttack = true;
+            isRolling = false;
+            playerState.recoverEnergy = true;
+        }
 
         public void ResetCombo()
         {
             attack_num = 0;
             _animator.SetInteger("Attack_num", attack_num);
+            if(!isRolling)
+                playerState.recoverEnergy = true;
         }
         private void RollAccelerate()
         {
@@ -409,13 +438,48 @@ namespace StarterAssets
                 _controller.Move(transform.forward * 5f * Time.deltaTime);
             }
         }
+
+        public void EnableMove()
+        {
+            canMove=true;
+        }
         private void Roll()
         {
             if (_input.roll)
             {
-                if (canMove) {
+                if (canMove && playerState.energyBar.fillAmount > playerState.energy_per_attack) {
                     // 1. 计算翻滚方向（这里举例：相机方向 + 输入方向）
-                    
+                    if(_animator.GetFloat("LockOn") == 1)
+                    {
+                        Vector2 move = _input.move;
+
+                        if (move.sqrMagnitude < 0.01f)
+                        {
+                            // 没有输入时，你可以选择：
+                            // _rollDir = transform.forward;      // 始终向前滚
+                            // 或者 _rollDir = -transform.forward; // 后撤步
+                            _rollDir = transform.forward;
+                        }
+                        else
+                        {
+                            // 相机前/右方向投射到地面
+                            Vector3 camFwd = _mainCamera.transform.forward;
+                            camFwd.y = 0f;
+                            camFwd.Normalize();
+
+                            Vector3 camRight = _mainCamera.transform.right;
+                            camRight.y = 0f;
+                            camRight.Normalize();
+
+                            // 上下左右输入组合成世界空间的滚动方向
+                            _rollDir = (camFwd * move.y + camRight * move.x).normalized;
+                        }
+
+                        // 2. 把角色朝向旋转到滚动方向
+                        if (_rollDir.sqrMagnitude > 0.0001f)
+                            transform.rotation = Quaternion.LookRotation(_rollDir);
+
+                    }
 
 
                     //_animator.applyRootMotion = true;
@@ -424,9 +488,12 @@ namespace StarterAssets
 
 
                     canMove =false;
+                    isRolling = true;
+                    playerState.ConsumeEnergy();
+                    playerState.recoverEnergy = false;
 
-                   
                 }
+                
                 _input.roll = false;
             }
         }
@@ -443,22 +510,33 @@ namespace StarterAssets
             }
         }
 
-        private void ChangeCombo()
+        private void ChangeMovement()
         {
             if (Input.GetKeyDown(KeyCode.Q))
+            {
+                if(_animator.GetFloat("LockOn")==0f)
+                    _animator.SetFloat("LockOn", 1f);
+                else
+                    _animator.SetFloat("LockOn", 0f);
+            }
+        }
+
+        private void ChangeCombo()
+        {
+            if (Input.GetKeyDown(KeyCode.Tab))
             {
                 _animator.SetBool("changeCombo", !_animator.GetBool("changeCombo"));
             }
         }
 
-        private void Sneak()
+        private void EightDirectionMove()
         {
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
             //Debug.Log("x方向位移"+_input.move.x);
             //Debug.Log("y方向位移"+_input.move.y);
             // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
             // if there is a move input rotate player when the player is moving
-            if (_input.move != Vector2.zero)
+            if (_input.move != Vector2.zero && !isRolling)
             {
 
                 //_animator.applyRootMotion = false;

@@ -46,8 +46,8 @@ ModelImporter:
       name: Dodge_Roll_Forward
       takeName: Take 001
       internalID: 0
-      firstFrame: 0
-      lastFrame: 34
+      firstFrame: 2.9
+      lastFrame: 34.8
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -69,6 +69,13 @@ ModelImporter:
       events:
       - time: 0.062289566
         functionName: ResetCombo
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: 0.58125
+        functionName: OpenRollAttackWindow
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
