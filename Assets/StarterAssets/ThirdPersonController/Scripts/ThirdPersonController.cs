@@ -125,6 +125,8 @@ namespace StarterAssets
         private bool isTargeting;
         public PlayerStateUI playerState;
 
+        public Transform lockTarget;
+
 
 
 
@@ -236,7 +238,7 @@ namespace StarterAssets
                     
                     //canMove = false;
                 }
-                else if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime >0.3f && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.9f)
+                else if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime >0.3f && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.87f)
                 {
                     canMove = false;
                     roll_accelerate = false;
@@ -254,7 +256,7 @@ namespace StarterAssets
                 }
             }
 
-            else if (_animator.GetBool("isSneak")|| _animator.GetFloat("LockOn")==1)
+            else if (_animator.GetBool("isSneak"))
             {
                 _animator.applyRootMotion = true;
             }
@@ -452,9 +454,10 @@ namespace StarterAssets
             {
                 if ((canMove ||isTargeting) && playerState.energyBar.fillAmount > playerState.energy_per_attack) {
                     // 1. 计算翻滚方向（这里举例：相机方向 + 输入方向）
-                    if(isTargeting)
+                    if(isTargeting ||_animator.GetBool("isSneak"))
                     {
                         Vector2 move = _input.move;
+                        _animator.SetBool("isSneak", false);
 
                         if (move.sqrMagnitude < 0.01f)
                         {
@@ -538,33 +541,105 @@ namespace StarterAssets
 
         private void EightDirectionMove()
         {
-            Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
-            //Debug.Log("x方向位移"+_input.move.x);
-            //Debug.Log("y方向位移"+_input.move.y);
-            // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-            // if there is a move input rotate player when the player is moving
-            if (_input.move != Vector2.zero && !isRolling)
+            Vector2 move = _input.move;
+
+            if (comboStateNames.Any(name => stateInfo.IsName(name)))
             {
+                // 输入参数平滑归零，避免动画树切到移动
+                float x0 = Mathf.Lerp(_animator.GetFloat("inputX"), 0f, Time.deltaTime * 10f);
+                float y0 = Mathf.Lerp(_animator.GetFloat("inputY"), 0f, Time.deltaTime * 10f);
+                _animator.SetFloat("inputX", x0);
+                _animator.SetFloat("inputY", y0);
+                return;    // ★ 关键：直接返回，不再改 transform.position / rotation
+            }
 
-                //_animator.applyRootMotion = false;
 
-                _targetRotation = _mainCamera.transform.eulerAngles.y;//潜行方向始终对着摄像机方向
-                float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
-                    RotationSmoothTime);
 
-                // rotate to face input direction relative to camera position
-                //if(_input.move.x>0)
-                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
-                //Animator animator = GetComponent<Animator>();
+            // ---------- 锁定视角移动 ----------
+            if (isTargeting && lockTarget != null && !isRolling)
+            {
+                // ★ 修改 1：无论有没有输入，都先让角色朝向目标
+                Vector3 toTarget = lockTarget.position - transform.position;
+                toTarget.y = 0f;
+                if (toTarget.sqrMagnitude > 0.0001f)
+                {
+                    Quaternion targetRot = Quaternion.LookRotation(toTarget);
+                    // 用 Slerp 平滑一点，也可以直接赋值
+                    transform.rotation = Quaternion.Slerp(
+                        transform.rotation,
+                        targetRot,
+                        Time.deltaTime * 10f);
+                }
+
+                // 下面再处理移动和动画
+                if (move.sqrMagnitude < 0.0001f)
+                {
+                    // 没有输入：inputX/inputY 平滑回 0
+                    float x0 = Mathf.Lerp(_animator.GetFloat("inputX"), 0f, Time.deltaTime * 10f);
+                    float y0 = Mathf.Lerp(_animator.GetFloat("inputY"), 0f, Time.deltaTime * 10f);
+                    _animator.SetFloat("inputX", x0);
+                    _animator.SetFloat("inputY", y0);
+                    return;
+                }
+
+                // ★ 修改 2：用 Cross 计算“右侧切线”，解决左右反的问题
+                // up × forward = right
+                //Vector3 tangentRight = Vector3.Cross(Vector3.up, toTarget);
+                //tangentRight.y = 0f;
+                //tangentRight.Normalize();
+
+                //// move.y 控制靠近/远离，move.x 控制左/右绕圈
+                //// A 键为 -1：右向切线 * -1 = 向左移动
+                //Vector3 moveWorld = toTarget * move.y + tangentRight * move.x;
+
+                //float moveMag = Mathf.Clamp01(move.magnitude);
+                //_controller.Move(moveWorld.normalized * 4f * moveMag * Time.deltaTime);
+
+                Vector3 localMove = new Vector3(move.x, 0f, move.y);
+                localMove = Vector3.ClampMagnitude(localMove, 1f);  // 保证最大长度 1
+
+                // 转到世界空间：forward = 面向敌人，right = 围着敌人绕圈
+                Vector3 worldMoveDir = transform.TransformDirection(localMove).normalized;
+
+                // 5. 统一速度，防止斜向看起来“慢一档”或“滑步” ★
+                float moveMag = localMove.magnitude;   // 0~1，手柄可用
+                _controller.Move(worldMoveDir * 4f * moveMag * Time.deltaTime);
+
+                // ★ 修改 3：动画仍然用原始输入做 2D Blend，斜向不会显得“变慢”
+                float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), localMove.x, Time.deltaTime * 10f);
+                float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), localMove.z, Time.deltaTime * 10f);
+                _animator.SetFloat("inputX", inputX_blend);
+                _animator.SetFloat("inputY", inputY_blend);
+
+                return;
+            }
+            else
+            {
+                
+                if (_input.move != Vector2.zero && !isRolling)
+                {
+
+                    //_animator.applyRootMotion = false;
+
+                    _targetRotation = _mainCamera.transform.eulerAngles.y;//潜行方向始终对着摄像机方向
+                    float rotation = Mathf.SmoothDampAngle(transform.eulerAngles.y, _targetRotation, ref _rotationVelocity,
+                        RotationSmoothTime);
+
+                    // rotate to face input direction relative to camera position
+                    //if(_input.move.x>0)
+                    transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                    //Animator animator = GetComponent<Animator>();
+
+                }
+                float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), _input.move.x, Time.deltaTime * 10f);
+                float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), _input.move.y, Time.deltaTime * 10f);
+                /*_animator.SetFloat("inputX", _input.move.x);
+                _animator.SetFloat("inputY",_input.move.y);*/
+
+                _animator.SetFloat("inputX", inputX_blend);
+                _animator.SetFloat("inputY", inputY_blend);
 
             }
-            float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), _input.move.x, Time.deltaTime * 10f);
-            float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), _input.move.y, Time.deltaTime * 10f);
-            /*_animator.SetFloat("inputX", _input.move.x);
-            _animator.SetFloat("inputY",_input.move.y);*/
-
-            _animator.SetFloat("inputX", inputX_blend);
-            _animator.SetFloat("inputY", inputY_blend);
 
         }
         private void Move()
