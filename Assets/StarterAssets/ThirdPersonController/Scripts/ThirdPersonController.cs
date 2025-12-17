@@ -122,12 +122,18 @@ namespace StarterAssets
         public bool canRollAttack;
         public bool isRolling;
         public bool canImmediatelyAttack;
-        private bool isTargeting;
+        
         public PlayerStateUI playerState;
 
+        private bool isTargeting;
         public Transform lockTarget;
+        public float lockOnCameraLerpSpeed = 2f;
 
+        private bool isInCombo;
+        public bool canRotateDuringAttack;
 
+        [SerializeField] private LockOnMarker lockOnPrefab;
+        private LockOnMarker currentMarker;
 
 
         private bool IsCurrentDeviceMouse
@@ -195,6 +201,7 @@ namespace StarterAssets
             GroundedCheck();
             
             Attack();
+            UpdateAttackFacing();
             Roll();
             RollAccelerate();
             
@@ -207,7 +214,7 @@ namespace StarterAssets
 
 
 
-            bool isInCombo = comboStateNames.Any(name => stateInfo.IsName(name));
+            isInCombo = comboStateNames.Any(name => stateInfo.IsName(name));
 
             if (isInCombo)
             {
@@ -286,7 +293,17 @@ namespace StarterAssets
 
         private void LateUpdate()
         {
-            CameraRotation();
+            if (isTargeting)
+            {
+                
+                LockOnCameraRotation();
+            }
+            else
+            {
+                
+                CameraRotation();
+            }
+            
         }
 
         private void AssignAnimationIDs()
@@ -333,6 +350,43 @@ namespace StarterAssets
             CinemachineCameraTarget.transform.rotation = Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
                 _cinemachineTargetYaw, 0.0f);
         }
+
+
+        private void LockOnCameraRotation()
+        {
+            if (lockTarget == null)
+            {
+                // 没有锁定目标时退回自由视角逻辑
+                CameraRotation();
+                return;
+            }
+
+            // ★ 1. 用“玩家指向敌人”的方向来算 yaw，而不是用玩家自身的欧拉角
+            Vector3 toTarget = lockTarget.position - transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 0.0001f)
+                return;
+
+            // 世界空间转成角度：z 轴为前
+            float targetYaw = Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg;
+
+            // ★ 2. 平滑插值到目标 yaw（无论是否在翻滚，都对着敌人）
+            _cinemachineTargetYaw = Mathf.LerpAngle(
+                _cinemachineTargetYaw,
+                targetYaw,
+                Time.deltaTime * lockOnCameraLerpSpeed   // 比如 10f
+            );
+
+            // pitch 继续用你现有的逻辑（可以保持原高度，或稍微固定一个角度）
+            _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
+
+            // ★ 3. 把旋转应用到 Cinemachine 的跟随目标
+            CinemachineCameraTarget.transform.rotation =
+                Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
+                                 _cinemachineTargetYaw,
+                                 0f);
+        }
+
 
         private void Attack()
         {
@@ -397,6 +451,32 @@ namespace StarterAssets
 
         private void ExecuteAttack()
         {
+            if (isTargeting && lockTarget != null)
+            {
+                Vector3 toTarget = lockTarget.position - transform.position;
+                toTarget.y = 0f;
+
+                if (toTarget.sqrMagnitude > 0.0001f)
+                {
+                    Quaternion currentRot = transform.rotation;
+                    Quaternion targetRot = Quaternion.LookRotation(toTarget);
+
+                    // 计算当前与目标的夹角
+                    float angle = Quaternion.Angle(currentRot, targetRot);
+                    if (angle > 0.01f)
+                    {
+                        // 这一帧最多能转多少度
+                        float maxStep = 720f * Time.deltaTime;
+                        // 本帧插值比例 t（0~1）
+                        float t = Mathf.Clamp01(maxStep / angle);
+
+                        // ★ 用 Slerp 进行“部分旋转”，而不是一次旋完
+                        transform.rotation = Quaternion.Slerp(currentRot, targetRot, t);
+                        // 等价也可以写成：
+                        // transform.rotation = Quaternion.RotateTowards(currentRot, targetRot, maxStep);
+                    }
+                }
+            }
             Debug.Log("执行一次");
             _animator.applyRootMotion = true;
             attack_num =attack_num+1;
@@ -410,6 +490,33 @@ namespace StarterAssets
             canChainNext = false;
             bufferAttack = false;
             
+        }
+
+        private void UpdateAttackFacing()
+        {
+            
+            if (!isTargeting || lockTarget == null) return;
+            if (!canRotateDuringAttack) return;
+
+            Vector3 toTarget = lockTarget.position - transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 0.0001f) return;
+
+            Quaternion currentRot = transform.rotation;
+            Quaternion targetRot = Quaternion.LookRotation(toTarget);
+
+            float maxStep = 720f * Time.deltaTime;
+            transform.rotation = Quaternion.RotateTowards(currentRot, targetRot, maxStep);
+        }
+        public void AttackRotateOn()
+        {
+            canRotateDuringAttack = true;
+        }
+
+        // 在挥刀中后段锁死方向
+        public void AttackRotateOff()
+        {
+            canRotateDuringAttack = false;
         }
 
         public void OpenComboWindow()
@@ -520,12 +627,25 @@ namespace StarterAssets
         {
             if (Input.GetKeyDown(KeyCode.Q))
             {
-                if(_animator.GetFloat("LockOn")==0f)
+                if (_animator.GetFloat("LockOn") == 0f)
+                {
+                    CameraModeController.Instance.SetLockOn(true, lockTarget);
                     _animator.SetFloat("LockOn", 1f);
+                    LockCameraPosition=true;
+                    if (currentMarker != null)
+                        Destroy(currentMarker.gameObject);
+
+                    currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
+                    
+                }
                 else
                 {
+                    CameraModeController.Instance.SetLockOn(false,null);
                     _animator.SetFloat("LockOn", 0f);
                     canMove = true;
+                    LockCameraPosition = false;
+                    if (currentMarker != null)
+                        Destroy(currentMarker.gameObject);
                 }
                     
             }

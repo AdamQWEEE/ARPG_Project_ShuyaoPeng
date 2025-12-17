@@ -58,6 +58,27 @@ ModelImporter:
       bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
       curves: []
       events:
+      - time: 0.13530655
+        functionName: AttackRotateOn
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: 0.4339649
+        functionName: AttackRotateOff
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: 0.45117843
+        functionName: ShowVFX7
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
       - time: 0.47074288
         functionName: OpenComboWindow
         data: 
@@ -74,13 +95,6 @@ ModelImporter:
         messageOptions: 0
       - time: 0.8506625
         functionName: ResetCombo
-        data: 
-        objectReferenceParameter: {instanceID: 0}
-        floatParameter: 0
-        intParameter: 0
-        messageOptions: 0
-      - time: 0.45117843
-        functionName: ShowVFX7
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
