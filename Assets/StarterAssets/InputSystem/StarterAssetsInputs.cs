@@ -16,6 +16,7 @@ namespace StarterAssets
 		public bool attack;
 		public bool sneak;
 		public bool roll;
+		public bool defense;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -53,7 +54,12 @@ namespace StarterAssets
             AttackInput(value.isPressed);
         }
 
-		public void OnSneak(InputValue value)
+        public void OnDefense(InputValue value)
+        {
+            DefenseInput(value.isPressed);
+        }
+
+        public void OnSneak(InputValue value)
 		{
 			SneakInput(value.isPressed);
 		}
@@ -75,6 +81,11 @@ namespace StarterAssets
         {
             attack = newAttackState;
         }
+
+		private void DefenseInput(bool newDefenseState)
+		{
+			defense = newDefenseState;
+		}
 
         private void RollInput(bool newRollState)
         {

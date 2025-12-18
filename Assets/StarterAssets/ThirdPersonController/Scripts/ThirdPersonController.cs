@@ -135,6 +135,10 @@ namespace StarterAssets
         [SerializeField] private LockOnMarker lockOnPrefab;
         private LockOnMarker currentMarker;
 
+        public GameObject defenseEffect;
+        //public Transform sword;
+        //public Transform defenceEffectPoint;
+
 
         private bool IsCurrentDeviceMouse
         {
@@ -191,6 +195,7 @@ namespace StarterAssets
             _jumpTimeoutDelta = JumpTimeout;
             _fallTimeoutDelta = FallTimeout;
             playerState = GetComponent<PlayerStateUI>();
+            //Time.timeScale = 0.5f;
         }
 
         private void Update()
@@ -202,6 +207,7 @@ namespace StarterAssets
             
             Attack();
             UpdateAttackFacing();
+            Defense();
             Roll();
             RollAccelerate();
             
@@ -449,6 +455,7 @@ namespace StarterAssets
             }
         }
 
+
         private void ExecuteAttack()
         {
             if (isTargeting && lockTarget != null)
@@ -508,6 +515,19 @@ namespace StarterAssets
             float maxStep = 720f * Time.deltaTime;
             transform.rotation = Quaternion.RotateTowards(currentRot, targetRot, maxStep);
         }
+
+        private void Defense()
+        {
+            if (_input.defense)
+            {
+                _input.defense=false;
+                _animator.SetTrigger("Defense");
+                defenseEffect.SetActive(false);
+                defenseEffect.SetActive(true);
+            }
+        }
+
+        
         public void AttackRotateOn()
         {
             canRotateDuringAttack = true;
