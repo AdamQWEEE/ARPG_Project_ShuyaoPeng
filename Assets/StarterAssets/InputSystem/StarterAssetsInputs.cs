@@ -17,6 +17,8 @@ namespace StarterAssets
 		public bool sneak;
 		public bool roll;
 		public bool defense;
+		public bool stab;
+		public bool toss;
 
 		[Header("Movement Settings")]
 		public bool analogMovement;
@@ -69,6 +71,16 @@ namespace StarterAssets
 			RollInput(value.isPressed);	
 		}
 
+		public void OnStab(InputValue value)
+		{
+			StabInput(value.isPressed);
+		}
+
+		public void OnToss(InputValue value)
+		{
+			TossInput(value.isPressed);
+		}
+
         
 
 
@@ -91,6 +103,16 @@ namespace StarterAssets
         {
             roll = newRollState;
         }
+
+		private void TossInput(bool newTossState)
+		{
+			toss = newTossState;
+		}
+
+		private void StabInput(bool newStabState)
+		{
+			stab = newStabState;
+		}
 
         public void MoveInput(Vector2 newMoveDirection)
 		{

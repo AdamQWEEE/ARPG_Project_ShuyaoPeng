@@ -210,7 +210,8 @@ namespace StarterAssets
             Defense();
             Roll();
             RollAccelerate();
-            
+            Stab();
+            Toss();
             ChangeToSneak();
             ChangeCombo();
             ChangeMovement();
@@ -524,6 +525,25 @@ namespace StarterAssets
                 _animator.SetTrigger("Defense");
                 defenseEffect.SetActive(false);
                 defenseEffect.SetActive(true);
+            }
+        }
+
+        private void Stab()
+        {
+            if (_input.stab)
+            {
+                _input.stab=false;
+                _animator.SetTrigger("Stab");
+            }
+        }
+
+        private void Toss()
+        {
+            if (_input.toss)
+            {
+                _input.toss = false;
+                _animator.SetTrigger("Toss");
+                print("投掷");
             }
         }
 
