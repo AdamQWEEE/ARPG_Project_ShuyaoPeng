@@ -48,11 +48,20 @@ public class FireBall : MonoBehaviour
 
     private void OnCollisionEnter(Collision other)
     {
+        
         // 在这里处理伤害、粒子特效、爆炸等
         // 比如：
         //   EnemyBase enemy = other.collider.GetComponentInParent<EnemyBase>();
         //   if (enemy != null) enemy.TakeDamage(damageAmount);
         // 然后销毁自己：
-        Destroy(gameObject);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Enemy")
+        {
+            other.gameObject.GetComponent<EnemyBase>().TakeDamage(30);
+            Destroy(gameObject);
+        }
     }
 }

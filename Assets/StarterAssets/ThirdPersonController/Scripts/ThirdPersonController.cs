@@ -132,8 +132,7 @@ namespace StarterAssets
         private bool isInCombo;
         public bool canRotateDuringAttack;
 
-        [SerializeField] private LockOnMarker lockOnPrefab;
-        private LockOnMarker currentMarker;
+        
 
         public GameObject defenseEffect;
         //public Transform sword;
@@ -148,6 +147,10 @@ namespace StarterAssets
         [Header("Lock-On")]
         //public EnemyBase currentLockTarget;
         public Transform cameraTransform;
+        public float lockOnPitch = 15f;
+        public float lockOnRadius = 15f;
+        [SerializeField] private LockOnMarker lockOnPrefab;
+        private LockOnMarker currentMarker;
 
 
         private bool IsCurrentDeviceMouse
@@ -392,6 +395,13 @@ namespace StarterAssets
                 _cinemachineTargetYaw,
                 targetYaw,
                 Time.deltaTime * lockOnCameraLerpSpeed   // 比如 10f
+            );
+
+            float targetPitch = lockOnPitch;
+            _cinemachineTargetPitch = Mathf.Lerp(
+                _cinemachineTargetPitch,
+                targetPitch,
+                Time.deltaTime * lockOnCameraLerpSpeed
             );
 
             // pitch 继续用你现有的逻辑（可以保持原高度，或稍微固定一个角度）
@@ -728,13 +738,18 @@ namespace StarterAssets
             {
                 if (_animator.GetFloat("LockOn") == 0f)
                 {
-                    CameraModeController.Instance.SetLockOn(true, lockTarget);
-                    _animator.SetFloat("LockOn", 1f);
-                    LockCameraPosition=true;
-                    if (currentMarker != null)
-                        Destroy(currentMarker.gameObject);
+                    EnemyBase nearest = EnemyManager.Instance.GetNearestEnemy(transform.position, lockOnRadius);
+                    if (nearest != null) {
 
-                    currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
+                        lockTarget = nearest.transform;
+                        CameraModeController.Instance.SetLockOn(true, lockTarget);
+                        _animator.SetFloat("LockOn", 1f);
+                        LockCameraPosition=true;
+                        if (currentMarker != null)
+                            Destroy(currentMarker.gameObject);
+
+                        currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
+                    }
                     
                 }
                 else
@@ -800,19 +815,6 @@ namespace StarterAssets
                     _animator.SetFloat("inputY", y0);
                     return;
                 }
-
-                // ★ 修改 2：用 Cross 计算“右侧切线”，解决左右反的问题
-                // up × forward = right
-                //Vector3 tangentRight = Vector3.Cross(Vector3.up, toTarget);
-                //tangentRight.y = 0f;
-                //tangentRight.Normalize();
-
-                //// move.y 控制靠近/远离，move.x 控制左/右绕圈
-                //// A 键为 -1：右向切线 * -1 = 向左移动
-                //Vector3 moveWorld = toTarget * move.y + tangentRight * move.x;
-
-                //float moveMag = Mathf.Clamp01(move.magnitude);
-                //_controller.Move(moveWorld.normalized * 4f * moveMag * Time.deltaTime);
 
                 Vector3 localMove = new Vector3(move.x, 0f, move.y);
                 localMove = Vector3.ClampMagnitude(localMove, 1f);  // 保证最大长度 1

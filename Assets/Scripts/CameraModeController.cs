@@ -1,4 +1,5 @@
 using Cinemachine;
+using StarterAssets;
 using UnityEngine;
 
 public class CameraModeController : Singleton<CameraModeController>
@@ -9,10 +10,14 @@ public class CameraModeController : Singleton<CameraModeController>
 
     public Transform player;      // 玩家
     public Transform currentEnemy; // 当前锁定敌人，由锁定系统设置
+    public ThirdPersonController playerController;
 
-    
+
     bool isLockOn;
-
+    private void Start()
+    {
+        playerController = player.GetComponent<ThirdPersonController>();
+    }
     public void SetLockOn(bool value, Transform enemy = null)
     {
         isLockOn = value;
