@@ -139,6 +139,16 @@ namespace StarterAssets
         //public Transform sword;
         //public Transform defenceEffectPoint;
 
+        [Header("Spell Settings")]
+        public FireBall fireballPrefab;
+        public Transform firePoint;        // 手/武器前端的挂点
+        public float baseTravelTime = 0.7f; // 基础飞行时间
+        public float maxExtraTime = 0.3f;   // 远距离时额外增加一点时间
+
+        [Header("Lock-On")]
+        //public EnemyBase currentLockTarget;
+        public Transform cameraTransform;
+
 
         private bool IsCurrentDeviceMouse
         {
@@ -543,11 +553,60 @@ namespace StarterAssets
             {
                 _input.toss = false;
                 _animator.SetTrigger("Toss");
+                //CastFireball();
                 print("投掷");
             }
         }
 
-        
+        void CastFireball()
+        {
+            if (fireballPrefab == null || firePoint == null) return;
+
+            // 1. 生成火球
+            FireBall proj = Instantiate(
+                fireballPrefab,
+                firePoint.position,
+                firePoint.rotation
+            );
+
+            // 2. 计算目标位置
+            Vector3 targetPos;
+
+            if (lockTarget != null)
+            {
+                // 锁定时瞄准敌人锁定点，稍微往上抬一点
+                targetPos = lockTarget.position + Vector3.up * 0.2f;
+            }
+            else
+            {
+                // 无锁定：沿摄像机前方打一段距离
+                Vector3 forward = cameraTransform != null
+                    ? cameraTransform.forward
+                    : transform.forward;
+
+                forward.y = Mathf.Clamp(forward.y, -0.1f, 0.5f); // 避免打太高/太低
+                forward.Normalize();
+
+                float distance = 15f; // 无锁定时默认射程
+                targetPos = firePoint.position + forward * distance;
+            }
+
+            // 3. 根据距离调整飞行时间，让远处多飞一会儿，近处快一点
+            Vector3 displacement = targetPos - firePoint.position;
+            float horizontalDist = new Vector3(displacement.x, 0, displacement.z).magnitude;
+
+            // 简单：水平距离越远，时间稍微长一点（上限 maxExtraTime）
+            float t = baseTravelTime + Mathf.Clamp01(horizontalDist / 20f) * maxExtraTime;
+
+            // 4. 计算初始速度：v = (Δp - 0.5 * g * t^2) / t
+            Vector3 g = Physics.gravity;
+            Vector3 velocity = (displacement - 0.5f * g * t * t) / t;
+
+            // 5. 发射
+            proj.Launch(velocity);
+        }
+
+
         public void AttackRotateOn()
         {
             canRotateDuringAttack = true;
