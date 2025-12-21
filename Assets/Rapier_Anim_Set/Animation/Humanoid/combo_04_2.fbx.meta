@@ -65,6 +65,13 @@ ModelImporter:
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
+      - time: 0.13812192
+        functionName: OpenDamageWindow
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
       - time: 0.17508417
         functionName: ShowVFX5
         data: 
@@ -81,6 +88,13 @@ ModelImporter:
         messageOptions: 0
       - time: 0.3367133
         functionName: AttackRotateOff
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: 0.35046256
+        functionName: CloseDamageWindow
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0

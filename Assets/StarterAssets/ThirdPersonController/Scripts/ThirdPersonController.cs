@@ -127,6 +127,7 @@ namespace StarterAssets
 
         private bool isTargeting;
         public Transform lockTarget;
+        public Transform faceTarget;
         public float lockOnCameraLerpSpeed = 2f;
 
         private bool isInCombo;
@@ -151,6 +152,13 @@ namespace StarterAssets
         public float lockOnRadius = 15f;
         [SerializeField] private LockOnMarker lockOnPrefab;
         private LockOnMarker currentMarker;
+
+        [Header("damage-check")]
+        public bool canTakeDamage;
+
+        [Header("Auto Attack Face")]
+        [SerializeField] private float autoFaceRadius = 6f;       // 自由视角下自动转向的半径
+        [SerializeField] private float autoFaceTurnSpeed = 720f;  // 自动转向最大角速度(度/秒)
 
 
         private bool IsCurrentDeviceMouse
@@ -505,6 +513,9 @@ namespace StarterAssets
                     }
                 }
             }
+
+           
+
             Debug.Log("执行一次");
             _animator.applyRootMotion = true;
             attack_num =attack_num+1;
@@ -638,6 +649,16 @@ namespace StarterAssets
         {
             canChainNext = false;
         }
+
+        public void OpenDamageWindow()
+        {
+            canTakeDamage = true;
+        }
+
+        public void CloseDamageWindow()
+        {
+            canTakeDamage = false;
+        }
         public void OpenRollAttackWindow()
         {
             canRollAttack = true;
@@ -754,15 +775,20 @@ namespace StarterAssets
                 }
                 else
                 {
-                    CameraModeController.Instance.SetLockOn(false,null);
-                    _animator.SetFloat("LockOn", 0f);
-                    canMove = true;
-                    LockCameraPosition = false;
-                    if (currentMarker != null)
-                        Destroy(currentMarker.gameObject);
+                    ReleaseLock();
                 }
                     
             }
+        }
+
+        public void ReleaseLock()
+        {
+            CameraModeController.Instance.SetLockOn(false, null);
+            _animator.SetFloat("LockOn", 0f);
+            canMove = true;
+            LockCameraPosition = false;
+            if (currentMarker != null)
+                Destroy(currentMarker.gameObject);
         }
 
         private void ChangeCombo()
@@ -777,7 +803,7 @@ namespace StarterAssets
         {
             Vector2 move = _input.move;
 
-            if (comboStateNames.Any(name => stateInfo.IsName(name)))
+            if (comboStateNames.Any(name => stateInfo.IsName(name))|| stateInfo.IsName("Toss"))
             {
                 // 输入参数平滑归零，避免动画树切到移动
                 float x0 = Mathf.Lerp(_animator.GetFloat("inputX"), 0f, Time.deltaTime * 10f);
@@ -808,6 +834,7 @@ namespace StarterAssets
                 // 下面再处理移动和动画
                 if (move.sqrMagnitude < 0.0001f)
                 {
+                    _controller.Move(Vector3.up * _verticalVelocity * Time.deltaTime);
                     // 没有输入：inputX/inputY 平滑回 0
                     float x0 = Mathf.Lerp(_animator.GetFloat("inputX"), 0f, Time.deltaTime * 10f);
                     float y0 = Mathf.Lerp(_animator.GetFloat("inputY"), 0f, Time.deltaTime * 10f);
@@ -824,7 +851,13 @@ namespace StarterAssets
 
                 // 5. 统一速度，防止斜向看起来“慢一档”或“滑步” ★
                 float moveMag = localMove.magnitude;   // 0~1，手柄可用
-                _controller.Move(worldMoveDir * 4f * moveMag * Time.deltaTime);
+                float lockMoveSpeed = 4f;              // 你原来写死的速度
+
+                Vector3 horizontalMove = worldMoveDir * lockMoveSpeed * moveMag;
+                Vector3 verticalMove = Vector3.up * _verticalVelocity;
+
+                _controller.Move((horizontalMove + verticalMove) * Time.deltaTime);
+                //_controller.Move(worldMoveDir * 4f * moveMag * Time.deltaTime);
 
                 // ★ 修改 3：动画仍然用原始输入做 2D Blend，斜向不会显得“变慢”
                 float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), localMove.x, Time.deltaTime * 10f);
@@ -904,10 +937,7 @@ namespace StarterAssets
 
             // normalise input direction
             Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
-            //Debug.Log("x方向位移"+_input.move.x);
-            //Debug.Log("y方向位移"+_input.move.y);
-            // note: Vector2's != operator uses approximation so is not floating point error prone, and is cheaper than magnitude
-            // if there is a move input rotate player when the player is moving
+            
             if (_input.move != Vector2.zero)
             {
                 
@@ -962,6 +992,7 @@ namespace StarterAssets
                 // Jump
                 if (_input.jump && _jumpTimeoutDelta <= 0.0f)
                 {
+                    _animator.applyRootMotion=false;
                     // the square root of H * -2 * G = how much velocity needed to reach desired height
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
 

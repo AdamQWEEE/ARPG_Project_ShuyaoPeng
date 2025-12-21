@@ -1,3 +1,4 @@
+using StarterAssets;
 using System;
 using UnityEngine;
 
@@ -133,6 +134,8 @@ public class EnemyBase : MonoBehaviour
     {
         if (IsDead) return;
         IsDead = true;
+        hpBar.gameObject.SetActive(false);
+        ThirdPersonController.Instance.ReleaseLock();
 
         // ½ûÓÃÅö×²
         //if (mainCollider != null)

@@ -65,6 +65,13 @@ ModelImporter:
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
+      - time: 0.2866248
+        functionName: OpenDamageWindow
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
       - time: 0.2962963
         functionName: ShowVFX2
         data: 
@@ -74,6 +81,13 @@ ModelImporter:
         messageOptions: 0
       - time: 0.42001575
         functionName: OpenComboWindow
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: 0.43776754
+        functionName: CloseDamageWindow
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
