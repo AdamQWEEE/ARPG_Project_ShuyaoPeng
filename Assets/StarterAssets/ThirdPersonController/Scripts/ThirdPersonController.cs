@@ -115,6 +115,8 @@ namespace StarterAssets
         private bool _hasAnimator;
         public bool canMove;
         private bool roll_accelerate;
+        private bool flip_accelerate;
+        private bool isFliping;
         Vector3 _rollDir;
         private AnimatorStateInfo stateInfo;
         public bool canChainNext;//是否进入连招区间
@@ -159,6 +161,11 @@ namespace StarterAssets
         [Header("Auto Attack Face")]
         [SerializeField] private float autoFaceRadius = 6f;       // 自由视角下自动转向的半径
         [SerializeField] private float autoFaceTurnSpeed = 720f;  // 自动转向最大角速度(度/秒)
+
+        [Header("SwordWave")]
+        public SwordWave swordWavePrefab;
+        public SwordWave currSwordWave;
+        public Transform swordWavePoint;
 
 
         private bool IsCurrentDeviceMouse
@@ -223,19 +230,26 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
 
-            JumpAndGravity();
-            GroundedCheck();
+            if (!isFliping)
+            {
+
+                JumpAndGravity();
+                GroundedCheck();
             
-            Attack();
-            UpdateAttackFacing();
-            Defense();
-            Roll();
-            RollAccelerate();
-            Stab();
-            Toss();
-            ChangeToSneak();
-            ChangeCombo();
-            ChangeMovement();
+                Attack();
+                UpdateAttackFacing();
+                Defense();
+                Roll();
+                RollAccelerate();
+            
+                Stab();
+                Toss();
+                ChangeToSneak();
+                ChangeCombo();
+                ChangeMovement();
+            }
+
+            FlipAccelerate();
 
             stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
             isTargeting = _animator.GetFloat("LockOn") == 1;
@@ -518,7 +532,15 @@ namespace StarterAssets
 
             Debug.Log("执行一次");
             _animator.applyRootMotion = true;
-            attack_num =attack_num+1;
+            if(!_animator.GetBool("changeCombo"))
+            {
+
+                attack_num = (attack_num % 3) + 1;
+            }
+            else
+            {
+                attack_num = attack_num + 1;
+            }
             _animator.SetInteger("Attack_num", attack_num);
             _animator.SetTrigger("Attack");
             //_input.attack = false;
@@ -680,7 +702,26 @@ namespace StarterAssets
                 _controller.Move(transform.forward * 5f * Time.deltaTime);
             }
         }
+        private void FlipAccelerate()
+        {
+            if (flip_accelerate)
+            {
+                _controller.Move(transform.forward * (-8f) * Time.deltaTime);
+            }
+        }
 
+        public void OpenFilpAccelerateWindow()
+        {
+            canMove = false;
+            flip_accelerate = true;
+        }
+
+        public void CloseFilpAccelerateWindow()
+        {
+            canMove = true;
+            flip_accelerate = false;
+            isFliping = false;
+        }
         public void EnableMove()
         {
             canMove=true;
@@ -795,8 +836,18 @@ namespace StarterAssets
         {
             if (Input.GetKeyDown(KeyCode.Tab))
             {
+                isFliping = true;
                 _animator.SetBool("changeCombo", !_animator.GetBool("changeCombo"));
+                _animator.SetTrigger("Flip");
+               
             }
+        }
+
+        public void CreateSwordWave()
+        {
+            currSwordWave = Instantiate(swordWavePrefab, swordWavePoint);
+            currSwordWave.transform.parent = null;
+            currSwordWave.EmitWave();
         }
 
         private void EightDirectionMove()
