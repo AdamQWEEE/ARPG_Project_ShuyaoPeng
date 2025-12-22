@@ -117,6 +117,7 @@ namespace StarterAssets
         private bool roll_accelerate;
         private bool flip_accelerate;
         private bool isFliping;
+        public bool canFlipToMove;
         Vector3 _rollDir;
         private AnimatorStateInfo stateInfo;
         public bool canChainNext;//是否进入连招区间
@@ -439,6 +440,9 @@ namespace StarterAssets
 
         private void Attack()
         {
+            if (stateInfo.IsName("Backflip"))
+                return;
+
             bool canStartFirstAttackNow =(attack_num == 0) && (!isRolling || canRollAttack); 
             if ((canChainNext || canStartFirstAttackNow) && GameObject.Find("Dialogue Panel") == null)
             {
@@ -694,6 +698,7 @@ namespace StarterAssets
             _animator.SetInteger("Attack_num", attack_num);
             if(!isRolling)
                 playerState.recoverEnergy = true;
+            canFlipToMove = true;
         }
         private void RollAccelerate()
         {
@@ -712,15 +717,20 @@ namespace StarterAssets
 
         public void OpenFilpAccelerateWindow()
         {
-            canMove = false;
+            canFlipToMove = false;
             flip_accelerate = true;
         }
 
         public void CloseFilpAccelerateWindow()
         {
-            canMove = true;
+            //canMove = true;
             flip_accelerate = false;
             isFliping = false;
+        }
+
+        public void OpenFlipToMoveWindow()
+        {
+            canFlipToMove = true;
         }
         public void EnableMove()
         {
@@ -730,7 +740,7 @@ namespace StarterAssets
         {
             if (_input.roll)
             {
-                if ((canMove ||isTargeting) && playerState.energyBar.fillAmount > playerState.energy_per_attack) {
+                if ((canMove ||isTargeting) && playerState.energyBar.fillAmount > playerState.energy_per_attack ) {
                     // 1. 计算翻滚方向（这里举例：相机方向 + 输入方向）
                     if(isTargeting ||_animator.GetBool("isSneak"))
                     {
@@ -839,6 +849,7 @@ namespace StarterAssets
                 isFliping = true;
                 _animator.SetBool("changeCombo", !_animator.GetBool("changeCombo"));
                 _animator.SetTrigger("Flip");
+                ResetCombo();
                
             }
         }
@@ -854,7 +865,7 @@ namespace StarterAssets
         {
             Vector2 move = _input.move;
 
-            if (comboStateNames.Any(name => stateInfo.IsName(name))|| stateInfo.IsName("Toss"))
+            if (comboStateNames.Any(name => stateInfo.IsName(name))|| stateInfo.IsName("Toss")|| !canFlipToMove)
             {
                 // 输入参数平滑归零，避免动画树切到移动
                 float x0 = Mathf.Lerp(_animator.GetFloat("inputX"), 0f, Time.deltaTime * 10f);
@@ -863,6 +874,9 @@ namespace StarterAssets
                 _animator.SetFloat("inputY", y0);
                 return;    // ★ 关键：直接返回，不再改 transform.position / rotation
             }
+
+            //if (stateInfo.IsName("Backflip"))
+            //    return;
 
 
 
@@ -907,14 +921,28 @@ namespace StarterAssets
                 Vector3 horizontalMove = worldMoveDir * lockMoveSpeed * moveMag;
                 Vector3 verticalMove = Vector3.up * _verticalVelocity;
 
-                _controller.Move((horizontalMove + verticalMove) * Time.deltaTime);
-                //_controller.Move(worldMoveDir * 4f * moveMag * Time.deltaTime);
+                if (!_animator.GetBool("isSneak"))
+                {
 
-                // ★ 修改 3：动画仍然用原始输入做 2D Blend，斜向不会显得“变慢”
-                float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), localMove.x, Time.deltaTime * 10f);
-                float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), localMove.z, Time.deltaTime * 10f);
-                _animator.SetFloat("inputX", inputX_blend);
-                _animator.SetFloat("inputY", inputY_blend);
+                     _controller.Move((horizontalMove + verticalMove) * Time.deltaTime);
+                    //_controller.Move(worldMoveDir * 4f * moveMag * Time.deltaTime);
+
+                    // ★ 修改 3：动画仍然用原始输入做 2D Blend，斜向不会显得“变慢”
+                    float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), localMove.x, Time.deltaTime * 10f);
+                    float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), localMove.z, Time.deltaTime * 10f);
+                    _animator.SetFloat("inputX", inputX_blend);
+                    _animator.SetFloat("inputY", inputY_blend);
+                }
+                else
+                {
+                    float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), _input.move.x, Time.deltaTime * 10f);
+                    float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), _input.move.y, Time.deltaTime * 10f);
+                    /*_animator.SetFloat("inputX", _input.move.x);
+                    _animator.SetFloat("inputY",_input.move.y);*/
+
+                    _animator.SetFloat("inputX", inputX_blend);
+                    _animator.SetFloat("inputY", inputY_blend);
+                }
 
                 return;
             }
@@ -951,6 +979,10 @@ namespace StarterAssets
         {
 
             
+
+            //if(stateInfo.IsName("Backflip"))
+            //    return;
+
             // set target speed based on move speed, sprint speed and if sprint is pressed
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
@@ -1007,10 +1039,17 @@ namespace StarterAssets
 
             Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
-            
+            if (!canFlipToMove)
+            {
+                _controller.Move(targetDirection.normalized * (0f * Time.deltaTime) +
+                                 new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+            }
+            else
+            {
+                _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
+                                 new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+            }
             // move the player
-            _controller.Move(targetDirection.normalized * (_speed * Time.deltaTime) +
-                             new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
 
             // update animator if using character
             if (_hasAnimator)

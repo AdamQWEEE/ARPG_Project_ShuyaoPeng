@@ -24,4 +24,10 @@ public class EnemyModel : MonoBehaviour
     {
         anim.SetTrigger("FallBack");
     }
+
+    public void GetHit()
+    {
+        anim.SetTrigger("Hit");
+        print("±»´ò»÷");
+    }
 }

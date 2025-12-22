@@ -26,7 +26,7 @@ public class SwordWave : MonoBehaviour
         
         if(canEmit)
         //transform.position += _dir * speed * Time.deltaTime;
-            transform.position += ThirdPersonController.Instance.transform.forward * speed *3f* Time.deltaTime;
+            transform.position += _dir * speed *3f* Time.deltaTime;
     }
 
     private void OnDestroy()
@@ -39,14 +39,16 @@ public class SwordWave : MonoBehaviour
     {
         canEmit = true;
         Destroy(gameObject, lifeTime);
+        _dir = ThirdPersonController.Instance.transform.forward;
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Enemy"))
         {
-            other.gameObject.GetComponent<EnemyBase>().TakeDamage(25);
-            other.gameObject.GetComponent<EnemyBase>().FallBack();
+            EnemyBase enemy = other.gameObject.GetComponent<EnemyBase>();
+            enemy.TakeDamage(10);
+            enemy.FallBack();
         }
     }
 }

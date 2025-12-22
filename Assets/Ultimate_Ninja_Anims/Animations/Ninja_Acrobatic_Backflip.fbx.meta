@@ -47,7 +47,7 @@ ModelImporter:
       takeName: Take 001
       internalID: 0
       firstFrame: 6.6
-      lastFrame: 50
+      lastFrame: 43.8
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -76,6 +76,13 @@ ModelImporter:
         messageOptions: 0
       - time: 0.49193776
         functionName: CloseFilpAccelerateWindow
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
+      - time: 0.917983
+        functionName: OpenFlipToMoveWindow
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
