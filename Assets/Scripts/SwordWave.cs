@@ -38,5 +38,15 @@ public class SwordWave : MonoBehaviour
     public void EmitWave()
     {
         canEmit = true;
+        Destroy(gameObject, lifeTime);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("Enemy"))
+        {
+            other.gameObject.GetComponent<EnemyBase>().TakeDamage(25);
+            other.gameObject.GetComponent<EnemyBase>().FallBack();
+        }
     }
 }

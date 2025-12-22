@@ -1104,6 +1104,7 @@ MonoBehaviour:
   mainCollider: {fileID: 0}
   hpBar: {fileID: 1288185505}
   enemyModel: {fileID: 0}
+  canFallBackMove: 0
 --- !u!95 &458680178
 Animator:
   serializedVersion: 7
@@ -6046,7 +6047,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   recoverEnergy: 0
   energyBar: {fileID: 2131958814}
-  energy_per_attack: 0.1
+  energy_per_attack: 0.05
 --- !u!114 &1762682272 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4416926081852918490, guid: 64dce48905ffd9b4293e595fa6941544, type: 3}
@@ -12378,6 +12379,7 @@ MonoBehaviour:
   mainCollider: {fileID: 0}
   hpBar: {fileID: 971764190}
   enemyModel: {fileID: 0}
+  canFallBackMove: 0
 --- !u!136 &8416685715156985574
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -12426,7 +12428,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &8416685715156985576
 MonoBehaviour:

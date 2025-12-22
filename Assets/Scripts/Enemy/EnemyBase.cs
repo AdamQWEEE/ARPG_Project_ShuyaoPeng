@@ -1,6 +1,7 @@
 using StarterAssets;
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem.XR;
 
 public enum Faction
 {
@@ -46,6 +47,8 @@ public class EnemyBase : MonoBehaviour
     [Header("怪物模型")]
     public EnemyModel enemyModel;
 
+    public bool canFallBackMove;
+
     protected virtual void Awake()
     {
         if (currentHealth <= 0f)
@@ -83,6 +86,8 @@ public class EnemyBase : MonoBehaviour
 
             TakeDamage(50f);
         }
+
+        FallBackMove();
     }
 
     #region 生命 / 受击 / 死亡
@@ -178,5 +183,23 @@ public class EnemyBase : MonoBehaviour
 
     #endregion
 
+    public void FallBack()
+    {
+        enemyModel.FallBack();
+        canFallBackMove = true;
+    }
+
+    public void FallBackMove()
+    {
+        if (canFallBackMove)
+        {
+            transform.position+= transform.forward * (-2f) * Time.deltaTime;
+        }
+    }
+
+    public void StopFallBackMove()
+    {
+        canFallBackMove=false;
+    }
 
 }

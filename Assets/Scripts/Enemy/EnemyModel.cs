@@ -19,4 +19,9 @@ public class EnemyModel : MonoBehaviour
     {
         anim.SetTrigger("Die");
     }
+
+    public void FallBack()
+    {
+        anim.SetTrigger("FallBack");
+    }
 }
