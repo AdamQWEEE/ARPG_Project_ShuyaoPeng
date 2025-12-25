@@ -168,6 +168,12 @@ namespace StarterAssets
         public SwordWave currSwordWave;
         public Transform swordWavePoint;
 
+        [Header("Counter")]
+        public bool isCounter;
+
+        [Header("Weapon")]
+        public Sword playerWeapon;
+
 
         private bool IsCurrentDeviceMouse
         {
@@ -239,7 +245,7 @@ namespace StarterAssets
             
                 Attack();
                 UpdateAttackFacing();
-                Defense();
+                Counter();
                 Roll();
                 RollAccelerate();
             
@@ -248,6 +254,7 @@ namespace StarterAssets
                 ChangeToSneak();
                 ChangeCombo();
                 ChangeMovement();
+                TakeExecution();
             }
 
             FlipAccelerate();
@@ -574,16 +581,32 @@ namespace StarterAssets
             transform.rotation = Quaternion.RotateTowards(currentRot, targetRot, maxStep);
         }
 
-        private void Defense()
+        private void TakeExecution()
+        {
+            if (Input.GetKeyDown(KeyCode.F))
+            {
+                _animator.SetTrigger("Execution");
+                playerWeapon.SetStabTransform();
+            }
+        }
+
+        private void Counter()
         {
             if (_input.defense)
             {
                 _input.defense=false;
                 _animator.SetTrigger("Defense");
-                defenseEffect.SetActive(false);
-                defenseEffect.SetActive(true);
+                
             }
         }
+
+        public void ShowCounterEffect()
+        {
+            defenseEffect.SetActive(false);
+            defenseEffect.SetActive(true);
+        }
+
+
 
         private void Stab()
         {
@@ -690,6 +713,16 @@ namespace StarterAssets
             canRollAttack = true;
             isRolling = false;
             playerState.recoverEnergy = true;
+        }
+
+        public void OpenCounterWindow()
+        {
+            isCounter = true;
+        }
+
+        public void CloseCounterWindow()
+        {
+            isCounter = false;
         }
 
         public void ResetCombo()

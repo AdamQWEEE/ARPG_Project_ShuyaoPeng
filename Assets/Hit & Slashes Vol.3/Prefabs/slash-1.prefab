@@ -42,7 +42,7 @@ ParticleSystem:
   m_GameObject: {fileID: 1084006902366150}
   serializedVersion: 8
   lengthInSec: 0.7
-  simulationSpeed: 1
+  simulationSpeed: 0.5
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
@@ -4679,7 +4679,6 @@ ParticleSystemRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 80f8052576a7e2349831ad066b890d75, type: 2}
   - {fileID: 2100000, guid: 80f8052576a7e2349831ad066b890d75, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -9368,7 +9367,6 @@ ParticleSystemRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 97f109f16981cb7469b4a7da8d7789a1, type: 2}
-  - {fileID: 2100000, guid: 97f109f16981cb7469b4a7da8d7789a1, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -9463,7 +9461,7 @@ ParticleSystem:
   m_GameObject: {fileID: 1778781217741998}
   serializedVersion: 8
   lengthInSec: 0.7
-  simulationSpeed: 1
+  simulationSpeed: 0.5
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
@@ -14101,7 +14099,6 @@ ParticleSystemRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: ee52cc66068f2df4ca376cc920232c52, type: 2}
-  - {fileID: 2100000, guid: ee52cc66068f2df4ca376cc920232c52, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -14201,7 +14198,7 @@ ParticleSystem:
   m_GameObject: {fileID: 1840170968027002}
   serializedVersion: 8
   lengthInSec: 0.7
-  simulationSpeed: 1
+  simulationSpeed: 0.5
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
@@ -18893,7 +18890,6 @@ ParticleSystemRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 31b23ec779a5974428fe6521da918a91, type: 2}
-  - {fileID: 2100000, guid: 31b23ec779a5974428fe6521da918a91, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -19001,7 +18997,7 @@ ParticleSystem:
   m_GameObject: {fileID: 1896210500930026}
   serializedVersion: 8
   lengthInSec: 0.7
-  simulationSpeed: 1
+  simulationSpeed: 0.5
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
@@ -23621,7 +23617,6 @@ ParticleSystemRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: e8d01c300997c3d429030c2c57ac1a47, type: 2}
-  - {fileID: 2100000, guid: 0fe1f57848d3e184b8fc7dc52a7ce078, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

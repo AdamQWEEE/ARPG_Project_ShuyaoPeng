@@ -1,10 +1,12 @@
 using StarterAssets;
 using System;
 using System.Collections;
+using Unity.Mathematics;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.InputSystem.XR;
-using static UnityEditor.Experimental.GraphView.GraphView;
+
+
 
 public enum Faction
 {
@@ -53,6 +55,9 @@ public class EnemyBase : MonoBehaviour
     [Header("UI血条")]
     public WorldSpaceHealthBar hpBar;
 
+    [Header("UI架势条")]
+    public EnemyStanceBar stanceBar;
+
     [Header("怪物模型")]
     public EnemyModel enemyModel;
 
@@ -60,7 +65,7 @@ public class EnemyBase : MonoBehaviour
     public bool canHitBackMove;
 
     [Header("刚体组件")]
-    public Rigidbody rb;
+    //public Rigidbody rb;
 
     [Header("KnockBack")]
 
@@ -90,9 +95,9 @@ public class EnemyBase : MonoBehaviour
     float _losePlayerTimer;
 
     [Header("攻击节奏（秒）")]
-    public float comboDuration = 1.0f;  // 三连击动画总长
-    public float heavyDuration = 1.0f;  // 重攻击动画总长
     public float attackRecoverDelay = 0.3f;  // 每段攻击间的间隔
+    public bool isJumpAttack; //是否是跳劈
+    public bool canApplyDamage;
 
     [Header("击退效果")]
     public float hitBackForce = 4f;
@@ -100,11 +105,18 @@ public class EnemyBase : MonoBehaviour
     public float stunDuration = 0.25f;     // 被打硬直时间
     public bool isHit;
 
+    [Header("后撤步")]
+    public float retreatMinDistance = 6f;   // 撤退到离玩家至少这么远
+    public float retreatMaxTime = 2f;
+    private float _retreatTimer;
+
     [Header("动画参数")]
     public int _patrolIndex = 0;
     public bool _isAttacking = false;
     public bool _isStunned = false;
     public bool _superArmor = false;
+
+    private AnimatorStateInfo currstate;
 
     public enum EnemyState
     {
@@ -114,7 +126,8 @@ public class EnemyBase : MonoBehaviour
         Chase,
         GetHit,
         Attack,
-        BackOff,
+        Retreat,
+        
         Dead
     }
 
@@ -135,7 +148,7 @@ public class EnemyBase : MonoBehaviour
             mainCollider = GetComponent<Collider>();
         agent=GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
-        rb = GetComponent<Rigidbody>();
+        //rb = GetComponent<Rigidbody>();
         SetNavMode(true);
     }
 
@@ -155,6 +168,7 @@ public class EnemyBase : MonoBehaviour
         enemyModel = GetComponent<EnemyModel>();
         
         player = ThirdPersonController.Instance;
+        
     }
 
     protected virtual void OnEnable()
@@ -186,9 +200,15 @@ public class EnemyBase : MonoBehaviour
             case EnemyState.GetHit: UpdateGetHit(); break;
             case EnemyState.ReturnHome: UpdateReturnHome(); break;
             case EnemyState.Attack: UpdateAttack(); break;
-            case EnemyState.BackOff: UpdateBackOff(); break;
+            case EnemyState.Retreat: UpdateRetreat(); break;
+            
             case EnemyState.Dead:  break;
         }
+
+        currstate = animator.GetCurrentAnimatorStateInfo(0);
+        
+
+
     }
     void ChangeState(EnemyState newState)
     {
@@ -202,13 +222,14 @@ public class EnemyBase : MonoBehaviour
 
             case EnemyState.Attack:
                 agent.isStopped = true;
-                animator.SetFloat("MoveSpeed", 0f);
-                if (!_isAttacking) StartCoroutine(AttackLoop());
+                SetNavMode(false);
+                animator.applyRootMotion = true;
+                animator.SetFloat("MoveSpeed", agent.velocity.magnitude);
+                if (!_isAttacking) StartAttack(); //StartCoroutine(AttackLoop());
+                _isAttacking = true;
                 break;
 
-            case EnemyState.BackOff:
-                _isAttacking = false;
-                break;
+            
         }
     }
 
@@ -216,14 +237,17 @@ public class EnemyBase : MonoBehaviour
     {
         FacePlayerIfNear();
         animator.SetFloat("MoveSpeed", 0f);
+        animator.SetBool("isRetreat",false);
 
         // 看见玩家就进入追击
-        if (DistanceToPlayer() <= sightRange)
+        if (currstate.IsName("retreatIdle")) return;
+
+        if (DistanceToPlayer() <= sightRange &&!isHit)
         {
             ChangeState(EnemyState.Chase);
         }
 
-        if (canPatrol && patrolPoints != null && patrolPoints.Length > 0)
+        if (canPatrol && patrolPoints != null && patrolPoints.Length > 0 )
         {
             ChangeState(EnemyState.Patrol);
         }
@@ -231,18 +255,23 @@ public class EnemyBase : MonoBehaviour
 
     void UpdatePatrol()
     {
+        if (currstate.IsName("retreatIdle")) { 
+
+            return;
+        }
         if (!canPatrol)
         {
             ChangeState(EnemyState.Idle);
             return;
         }
-
+        
         if (patrolPoints == null || patrolPoints.Length == 0)
         {
             ChangeState(EnemyState.Idle);
             return;
         }
 
+        agent.enabled = true;
         agent.speed = patrolSpeed;
         animator.SetFloat("MoveSpeed", agent.velocity.magnitude);
         agent.isStopped = false;
@@ -255,7 +284,7 @@ public class EnemyBase : MonoBehaviour
             StartCoroutine(SwitchPatrolPointAfterWait());
         }
 
-        if (DistanceToPlayer() <= sightRange)
+        if (DistanceToPlayer() <= sightRange && !isHit)
         {
             ChangeState(EnemyState.Chase);
         }
@@ -281,6 +310,7 @@ public class EnemyBase : MonoBehaviour
 
     void UpdateChase()
     {
+        if (currstate.IsName("retreatIdle")) return;
         float dist = DistanceToPlayer();
 
         if (dist > chaseRange)
@@ -290,6 +320,7 @@ public class EnemyBase : MonoBehaviour
             return;
         }
 
+        agent.enabled = true;
         agent.speed = chaseSpeed;
         animator.SetFloat("MoveSpeed", agent.velocity.magnitude);
         agent.isStopped = false;
@@ -301,7 +332,7 @@ public class EnemyBase : MonoBehaviour
 
         if (dist <= attackRange && !_isAttacking && !_isStunned)
         {
-            //ChangeState(EnemyState.Attack);
+            ChangeState(EnemyState.Attack);
         }
     }
 
@@ -349,6 +380,7 @@ public class EnemyBase : MonoBehaviour
     public void FinishGetHit()
     {
         isHit = false;
+        _isAttacking = false;
     }
 
     void UpdateAttack()
@@ -357,82 +389,98 @@ public class EnemyBase : MonoBehaviour
         FacePlayerIfNear();
     }
 
-    IEnumerator AttackLoop()
+    void StartAttack()
     {
         _isAttacking = true;
 
-        while (state == EnemyState.Attack && !_isStunned && state != EnemyState.Dead)
+        if (state == EnemyState.Attack && !_isStunned && state != EnemyState.Dead)
         {
-            float dist = DistanceToPlayer();
-            if (dist > attackRange * 1.2f)
-            {
-                // 玩家跑远了，结束攻击转回追击
-                ChangeState(EnemyState.Chase);
-                break;
-            }
+            //float dist = DistanceToPlayer();
+            //if (dist > attackRange * 1.2f)
+            //{
+            //    // 玩家跑远了，结束攻击转回追击
+            //    ChangeState(EnemyState.Chase);
+            //    break;
+            //}
 
             // 1. 三连击（一个动画，内部用动画事件打三段）
             FacePlayerIfNear();
+            animator.SetBool("isJumpAttack", isJumpAttack);
             animator.SetTrigger("Combo");
-            yield return new WaitForSeconds(comboDuration + attackRecoverDelay);
-
-            // 2. 后撤
-            ChangeState(EnemyState.BackOff);
-            yield return new WaitForSeconds(0.3f); // 给一点时间让 BackOff 状态 Update 生效
-            while (state == EnemyState.BackOff)
-                yield return null;
-
-            // 如果已经不在攻击距离，退出攻击循环
-            if (DistanceToPlayer() > attackRange * 1.2f)
-            {
-                ChangeState(EnemyState.Chase);
-                break;
-            }
-
-            // 3. 重攻击
-            FacePlayerIfNear();
-            animator.SetTrigger("HeavyAttack");
-            yield return new WaitForSeconds(heavyDuration + attackRecoverDelay);
-
-            // 4. 再后撤
-            ChangeState(EnemyState.BackOff);
-            yield return new WaitForSeconds(0.3f);
-            while (state == EnemyState.BackOff)
-                yield return null;
-
-            // 循环：若仍在攻击范围内，会再次进入 AttackLoop
-            if (DistanceToPlayer() <= attackRange * 1.2f)
-            {
-                ChangeState(EnemyState.Attack);
-            }
-            else
-            {
-                ChangeState(EnemyState.Chase);
-                break;
-            }
+            //yield return null;
+            
+            //yield return new WaitForSeconds();
+            //SetNavMode(true);
+            //animator.applyRootMotion = false;
+            //ChangeState(EnemyState.Idle);
+            
         }
 
-        _isAttacking = false;
+        //_isAttacking = false;
     }
 
-    void UpdateBackOff()
+    private void SetAttackRange()
     {
-        // 用 NavMeshAgent 向后退，退到一定距离后回到 Chase
-        if (agent.isStopped) agent.isStopped = false;
-
-        Vector3 dirToPlayer = (transform.position - player.transform.position).normalized;
-        Vector3 backTarget = transform.position + dirToPlayer * backOffDistance;
-
-        agent.speed = backOffSpeed;
-        agent.SetDestination(backTarget);
-
-        animator.SetFloat("MoveSpeed", agent.velocity.magnitude);
-
-        if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance + 0.1f)
-        {
-            ChangeState(EnemyState.Chase);
-        }
+       attackRange=isJumpAttack? 3f : 1.5f;
     }
+
+
+    public void StartRetreat()
+    {
+        isJumpAttack = !isJumpAttack;
+        SetAttackRange();
+        CancelInvoke("BackIdle");
+        StopAllCoroutines();
+        _isAttacking = false;
+        if (state == EnemyState.Dead) return;
+
+        // 先面向玩家
+        FacePlayerIfNear();
+
+        // 切换成 Root Motion 模式
+        SetNavMode(false);
+
+        // 计时器，用来防止动画/导航问题导致一直撤退
+        _retreatTimer = retreatMaxTime;
+
+        // 发动画 Trigger：AnyState → dodgeback → runback
+        animator.ResetTrigger("Combo");   // 视你自己的参数而定，可有可无
+        animator.SetTrigger("DodgeBack");
+        animator.SetBool("isRetreat", true);
+
+        ChangeState(EnemyState.Retreat);
+    }
+
+    void UpdateRetreat()
+    {
+        FacePlayerIfNear();
+
+        // 计时
+        _retreatTimer -= Time.deltaTime;
+
+        // 距离判断
+        float dist = DistanceToPlayer();
+
+        // 到达预期距离 或 时间超时 → 回到追击
+        if (dist >= retreatMinDistance || _retreatTimer <= 0f)
+        {
+            
+            // 回到导航驱动
+            animator.SetBool("isRetreat",false);
+            //Invoke("BackIdle", 1f);
+        }
+
+        
+    }
+
+    public void BackIdle()
+    {
+        CancelInvoke();
+        //SetNavMode(true);
+        ChangeState(EnemyState.Idle);
+        Debug.Log("回到idle");
+    }
+
     float DistanceToPlayer()
     {
         if (player == null) return Mathf.Infinity;
@@ -448,7 +496,8 @@ public class EnemyBase : MonoBehaviour
         if (toPlayer.sqrMagnitude < 0.001f) return;
 
         Quaternion targetRot = Quaternion.LookRotation(toPlayer);
-        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 8f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 10f);
+        
     }
 
     #region 生命 / 受击 / 死亡
@@ -478,6 +527,11 @@ public class EnemyBase : MonoBehaviour
     public void TakeDamage(float amount)
     {
         TakeDamage(amount, transform.position, Vector3.up);
+    }
+
+    public void AddStance(float amount)
+    {
+        stanceBar.AddStance(amount);
     }
 
     /// <summary>
@@ -555,6 +609,9 @@ public class EnemyBase : MonoBehaviour
 
     public void FallBack()
     {
+        StopAllCoroutines();
+        _isAttacking = false;
+        animator.applyRootMotion = false;
         CancelInvoke();
         enemyModel.FallBack();
         canFallBackMove = true;
@@ -564,12 +621,31 @@ public class EnemyBase : MonoBehaviour
         
     }
 
+    public void LoseBalance()
+    {
+        animator.SetTrigger("LoseBalance");
+        SetNavMode(false);
+        isHit = true;
+        ChangeState(EnemyState.GetHit);
+    }
+
     public void FallBackMove()
     {
         if (canFallBackMove)
         {
             transform.position+= transform.forward * (-2f) * Time.deltaTime;
         }
+    }
+
+    public void OpenDamageWindow()
+    {
+        canApplyDamage = true;
+        Debug.Log("触发攻击");
+    }
+
+    public void CloseDamageWindow()
+    {
+        canApplyDamage = false;
     }
 
     public void StopFallBackMove()
@@ -586,34 +662,28 @@ public class EnemyBase : MonoBehaviour
 
     public void ApplyKnockback(Vector3 attackerPosition)
     {
+        //StopAllCoroutines();
         CancelInvoke();
         enemyModel.GetHit();
         SetNavMode(false);
-        if (rb == null) return;
-
-        // 计算从攻击者指向敌人的方向
-        //Vector3 dir = (transform.position - attackerPosition);
-        //dir.y = 0f;
-        //dir.Normalize();
-
-        //// 最终击退方向 = 水平后退 + 向上
-        //Vector3 knockDir = dir * knockbackHorizontal + Vector3.up * knockbackVertical;
-
-        //// 清掉原来的水平速度，避免叠加得太怪
-        //Vector3 v = rb.linearVelocity;
-        //v.x = 0; v.z = 0;
-        //rb.linearVelocity = v;
-
-        //// 一次性施加速度变化（冲量）
-        //rb.AddForce(knockDir, ForceMode.VelocityChange);
 
         isHit=true;
-        Invoke("FinishGetHit", 3f);
+        //Invoke("ChanceRetreat", 1.5f);
+        Invoke("FinishGetHit", 2f);
+        
         ChangeState(EnemyState.GetHit);
 
         //_isKnockback = true;
         //StopCoroutine(nameof(EndKnockback));
         //StartCoroutine(EndKnockback());
+    }
+
+    private void ChanceRetreat()
+    {
+        if (UnityEngine.Random.Range(0,100)>70)
+        {
+            StartRetreat();
+        }
     }
 
     public void HitBackMove()
@@ -635,17 +705,20 @@ public class EnemyBase : MonoBehaviour
         {
             // 导航接管
             //rb.isKinematic = false;
-            rb.linearVelocity = Vector3.zero;
+            //rb.linearVelocity = Vector3.zero;
             agent.enabled = true;
+            animator.applyRootMotion = false;
         }
         else
         {
+            //rb.isKinematic = true;
             if (agent.enabled)
             {
                 agent.isStopped = true;
                 agent.enabled = false;
             }
-            //rb.isKinematic = true;
+            animator.applyRootMotion = true;
+
         }
     }
 

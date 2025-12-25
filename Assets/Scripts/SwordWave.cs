@@ -49,6 +49,7 @@ public class SwordWave : MonoBehaviour
             EnemyBase enemy = other.gameObject.GetComponent<EnemyBase>();
             enemy.TakeDamage(10);
             enemy.FallBack();
+            GetComponent<BoxCollider>().enabled = false;
         }
     }
 }
