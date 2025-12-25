@@ -79,6 +79,7 @@ public class PlayerStateUI : MonoBehaviour
         // 缓冲条的目标值更新到更小的目标
         if (normalized < _bufferTarget)
             _bufferTarget = normalized;
+        Debug.Log("造成一次伤害");
     }
 
     /// <summary>如果以后有加血逻辑，可以单独控制缓冲条回升</summary>

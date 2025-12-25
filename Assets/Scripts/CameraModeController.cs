@@ -6,6 +6,7 @@ public class CameraModeController : Singleton<CameraModeController>
 {
     public CinemachineVirtualCamera vcamFree;
     public CinemachineVirtualCamera vcamLock;
+    public CinemachineVirtualCamera vcamExecute;
     public CinemachineTargetGroup lockTargetGroup;
 
     public Transform player;      // 玩家
@@ -53,5 +54,63 @@ public class CameraModeController : Singleton<CameraModeController>
 
             
         }
+    }
+
+    public void StartExecuteCamera(Transform enemy=null, Transform lookPoint = null)
+    {
+        //if (vcamExecute == null) return;
+
+        //isExecuting = true;
+        //wasLockOnBeforeExecute = isLockOn;
+        currentEnemy = enemy;
+
+        // 处决期间关闭锁定 / 自由相机的优先级
+        vcamLock.Priority = 0;
+        vcamFree.Priority = 0;
+
+        // 绑定跟随与注视
+        //if (playerController != null)
+        //{
+        //    // 这里用你角色上的 CameraRoot，如果名字不同自己替换
+        //    var follow = playerController.PlayerCameraRoot;
+        //    vcamExecute.Follow = follow;
+        //}
+        //else
+        //{
+        //    vcamExecute.Follow = player;
+        //}
+
+        //vcamExecute.LookAt = lookPoint != null ? lookPoint : enemy;
+
+        // 最高优先级，让处决相机接管
+        vcamExecute.Priority = 40;
+
+        // 处决时一般也会锁输入，这里只做相机，不处理输入
+    }
+
+    public void EndExecuteCamera()
+    {
+        if (vcamExecute == null) return;
+
+        //isExecuting = false;
+
+        // 降低处决相机优先级
+        vcamExecute.Priority = 0;
+        vcamLock.Priority = 5;
+        vcamFree.Priority = 15;
+
+        // 恢复处决前的相机模式
+        //if (wasLockOnBeforeExecute && currentEnemy != null)
+        //{
+        //    // 重新锁定原来的敌人
+        //    SetLockOn(true, currentEnemy);
+        //}
+        //else
+        //{
+        //    // 回到自由相机
+        //    isLockOn = false;
+        //    vcamLock.Priority = 5;
+        //    vcamFree.Priority = 15;
+        //}
     }
 }

@@ -174,6 +174,14 @@ namespace StarterAssets
         [Header("Weapon")]
         public Sword playerWeapon;
 
+        [Header("Execution")]
+        [SerializeField] private float executePitch = 8f;          // 稍稍俯视一点
+        [SerializeField] private float executeCameraLerpSpeed = 10f;
+        public bool isExecutingView;
+        public bool canExecute;
+        
+        //private bool isExecuting;
+
 
         private bool IsCurrentDeviceMouse
         {
@@ -254,6 +262,7 @@ namespace StarterAssets
                 ChangeToSneak();
                 ChangeCombo();
                 ChangeMovement();
+                //ChangeExecutionView();
                 TakeExecution();
             }
 
@@ -343,15 +352,23 @@ namespace StarterAssets
 
         private void LateUpdate()
         {
-            if (isTargeting)
+            if (isExecutingView)
             {
-                
-                LockOnCameraRotation();
+                ExecuteCameraRotation();
             }
             else
             {
-                
-                CameraRotation();
+
+                if (isTargeting)
+                {
+
+                    LockOnCameraRotation();
+                }
+                else
+                {
+
+                    CameraRotation();
+                }
             }
             
         }
@@ -442,6 +459,53 @@ namespace StarterAssets
                 Quaternion.Euler(_cinemachineTargetPitch + CameraAngleOverride,
                                  _cinemachineTargetYaw,
                                  0f);
+        }
+
+        private void ExecuteCameraRotation()
+        {
+            var camMode = CameraModeController.Instance;
+            if (camMode == null || camMode.currentEnemy == null)
+            {
+                // 没有处决目标就退回普通逻辑
+                CameraRotation();
+                return;
+            }
+
+            Transform execTarget = camMode.currentEnemy;
+
+            // 1. 计算“玩家 → 处决目标”的水平向量
+            Vector3 toTarget = execTarget.position - transform.position;
+            toTarget.y = 0f;
+            if (toTarget.sqrMagnitude < 0.0001f)
+                return;
+
+            // 2. 世界空间转成 yaw 角度（Z 轴朝前）
+            float targetYaw = Mathf.Atan2(toTarget.x, toTarget.z) * Mathf.Rad2Deg;
+
+            // 3. 平滑插值到目标 yaw（不读鼠标输入，完全跟随处决目标）
+            _cinemachineTargetYaw = Mathf.LerpAngle(
+                _cinemachineTargetYaw,
+                targetYaw,
+                Time.deltaTime * executeCameraLerpSpeed
+            );
+
+            // 4. pitch 固定在一个常量（只狼处决那种微俯视）
+            float targetPitch = executePitch;
+            _cinemachineTargetPitch = Mathf.Lerp(
+                _cinemachineTargetPitch,
+                targetPitch,
+                Time.deltaTime * executeCameraLerpSpeed
+            );
+
+            // 如果你还有俯仰限制就照旧夹一下
+            _cinemachineTargetPitch = ClampAngle(_cinemachineTargetPitch, BottomClamp, TopClamp);
+
+            // 5. 把旋转应用到 Cinemachine 的跟随目标
+            CinemachineCameraTarget.transform.rotation = Quaternion.Euler(
+                _cinemachineTargetPitch + CameraAngleOverride,
+                _cinemachineTargetYaw,
+                0f
+            );
         }
 
 
@@ -583,11 +647,18 @@ namespace StarterAssets
 
         private void TakeExecution()
         {
-            if (Input.GetKeyDown(KeyCode.F))
+            if (Input.GetKeyDown(KeyCode.F)&&canExecute)
             {
+                ChangeExecutionView();
                 _animator.SetTrigger("Execution");
                 playerWeapon.SetStabTransform();
             }
+        }
+
+        public void ApplyExecutionEffect()
+        {
+            if(canExecute && isTargeting)
+                lockTarget.GetComponent<EnemyBase>().PlayExecutionAnim();
         }
 
         private void Counter()
@@ -596,6 +667,7 @@ namespace StarterAssets
             {
                 _input.defense=false;
                 _animator.SetTrigger("Defense");
+                isCounter = true;
                 
             }
         }
@@ -839,7 +911,7 @@ namespace StarterAssets
 
         private void ChangeMovement()
         {
-            if (Input.GetKeyDown(KeyCode.Q))
+            if (Input.GetKeyDown(KeyCode.Q)&&!isExecutingView)
             {
                 if (_animator.GetFloat("LockOn") == 0f)
                 {
@@ -863,6 +935,28 @@ namespace StarterAssets
                 }
                     
             }
+        }
+
+        private void ChangeExecutionView()
+        {
+            
+            isExecutingView = !isExecutingView;
+            if (isExecutingView)
+            {
+                CameraModeController.Instance.StartExecuteCamera();
+                LockCameraPosition = true;
+            }
+            else
+            {
+                CameraModeController.Instance.EndExecuteCamera();
+                //LockCameraPosition = false;
+                if (isTargeting)
+                {
+                    Destroy(lockTarget.GetChild(0).transform.GetChild(0).gameObject);
+                    currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
+                }
+            }
+            
         }
 
         public void ReleaseLock()
@@ -892,6 +986,11 @@ namespace StarterAssets
             currSwordWave = Instantiate(swordWavePrefab, swordWavePoint);
             currSwordWave.transform.parent = null;
             currSwordWave.EmitWave();
+        }
+
+        public void GetHeavyAttack()
+        {
+            _animator.SetTrigger("isHeavyAttacked");
         }
 
         private void EightDirectionMove()

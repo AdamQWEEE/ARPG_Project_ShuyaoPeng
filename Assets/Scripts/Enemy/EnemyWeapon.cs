@@ -17,13 +17,14 @@ public class EnemyWeapon : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!isExplode && enemy.state==EnemyBase.EnemyState.Attack)
+        AnimatorStateInfo stateInfo = enemy.animator.GetCurrentAnimatorStateInfo(0);
+        if (!isExplode && stateInfo.IsName("Jumpattack"))
         {
             if (weaponEnd.transform.position.y < 0.1f)
             {
                 explodeItem= Instantiate(explodePrefab);
                 explodeItem.position= weaponEnd.transform.position;
-                Destroy(explodeItem, 1f);
+                Destroy(explodeItem.gameObject, 1f);
                 isExplode=true;
                 Invoke("ResetExplode", 3f);
             }
@@ -46,10 +47,13 @@ public class EnemyWeapon : MonoBehaviour
                 else
                 {
                     player.playerState.TakeDamage(20);
+                    Debug.Log("´òµ½Íæ¼Ò");
+                    enemy.canApplyDamage = false;
+                   
                 }
 
 
-                enemy.canApplyDamage = false;
+                
             }
         }
     }

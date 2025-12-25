@@ -116,6 +116,13 @@ public class EnemyBase : MonoBehaviour
     public bool _isStunned = false;
     public bool _superArmor = false;
 
+    [Header("被处决")]
+    [SerializeField] private LockOnMarker executionMarkPrefab;
+    private Transform currExecutionMarker;
+    public Transform BloodVfxPrefab;
+    private Transform currBloodVfx;
+    public Transform BloodPoint;
+
     private AnimatorStateInfo currstate;
 
     public enum EnemyState
@@ -640,7 +647,7 @@ public class EnemyBase : MonoBehaviour
     public void OpenDamageWindow()
     {
         canApplyDamage = true;
-        Debug.Log("触发攻击");
+        //Debug.Log("触发攻击");
     }
 
     public void CloseDamageWindow()
@@ -680,7 +687,7 @@ public class EnemyBase : MonoBehaviour
 
     private void ChanceRetreat()
     {
-        if (UnityEngine.Random.Range(0,100)>70)
+        if (UnityEngine.Random.Range(0,100)>40)
         {
             StartRetreat();
         }
@@ -697,6 +704,41 @@ public class EnemyBase : MonoBehaviour
     public void StopHitBackMove()
     {
         canHitBackMove=false;
+    }
+
+    public void ShowExecutionMarker()
+    {
+        Destroy(transform.GetChild(0).transform.GetChild(0).gameObject);
+        currExecutionMarker = Instantiate(executionMarkPrefab, transform.GetChild(0)).transform;
+        player.canExecute = true;
+        Debug.Log("生成斩杀点");
+    }
+
+    public void HideExecutionMarker()
+    {
+        Destroy(currExecutionMarker.gameObject);
+    }
+
+    public void PlayExecutionAnim()
+    {
+        animator.SetTrigger("TakeExecution");
+        Invoke("Recover", 2f);
+    }
+
+    public void ShowBloodEffect()
+    {
+        currBloodVfx = Instantiate(BloodVfxPrefab,BloodPoint);
+        currBloodVfx.parent = null;
+        TakeDamage(30f);
+        Destroy(currBloodVfx.gameObject,1f);
+
+    }
+
+
+    private void Recover()
+    {
+        animator.SetTrigger("Recover");
+        stanceBar.ResetStance();
     }
 
     void SetNavMode(bool useNav)

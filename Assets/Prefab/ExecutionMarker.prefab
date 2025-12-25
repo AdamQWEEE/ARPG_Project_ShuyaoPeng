@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7319870548217323083}
   - component: {fileID: 5246331055793825590}
   m_Layer: 6
-  m_Name: StabMarker
+  m_Name: ExecutionMarker
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

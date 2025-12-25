@@ -8,8 +8,9 @@ public class ExplodeWave : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             ThirdPersonController player=other.GetComponent<ThirdPersonController>();
+            player.GetHeavyAttack();
+            player.playerState.TakeDamage(30f);
             GetComponent<Collider>().enabled = false;
-            //player.playerState.TakeDamage(30f);
             //Destroy(gameObject);
         }
     }

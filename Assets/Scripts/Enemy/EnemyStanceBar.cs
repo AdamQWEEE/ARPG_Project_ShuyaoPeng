@@ -40,7 +40,7 @@ public class EnemyStanceBar : MonoBehaviour
         stanceUI_Left.fillAmount = normalized;
         stanceUI_Right.fillAmount = normalized;
 
-        if (currentStance > 0)
+        if (currentStance > 0 && currentStance<maxStance)
         {
             currentStance -= Time.deltaTime*2f;
             
@@ -63,8 +63,14 @@ public class EnemyStanceBar : MonoBehaviour
         if (currentStance == maxStance)
         {
             enemy.LoseBalance();
+            enemy.ShowExecutionMarker();
         }
         
+    }
+
+    public void ResetStance()
+    {
+        currentStance = 0;
     }
 
     /// <summary>如果以后有加血逻辑，可以单独控制缓冲条回升</summary>
