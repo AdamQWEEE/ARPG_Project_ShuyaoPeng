@@ -72,13 +72,6 @@ ModelImporter:
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.58033574
-        functionName: ApplyExecutionEffect
-        data: 
-        objectReferenceParameter: {instanceID: 0}
-        floatParameter: 0
-        intParameter: 0
-        messageOptions: 0
       - time: 0.9390237
         functionName: ChangeExecutionView
         data: 

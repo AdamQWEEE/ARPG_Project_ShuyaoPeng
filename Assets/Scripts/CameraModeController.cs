@@ -36,9 +36,10 @@ public class CameraModeController : Singleton<CameraModeController>
             // 提升锁定相机 Priority
             vcamLock.Priority = 20;   // > vcamFree
             vcamFree.Priority = 10;
+            //vcamExecute.Priority = 0;
 
             // 关闭自由相机的输入
-            
+
         }
         else
         {
@@ -51,8 +52,9 @@ public class CameraModeController : Singleton<CameraModeController>
             // 切回自由相机
             vcamLock.Priority = 5;
             vcamFree.Priority = 15;
+            //vcamExecute.Priority = 0;
 
-            
+
         }
     }
 

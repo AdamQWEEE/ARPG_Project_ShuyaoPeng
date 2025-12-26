@@ -22,6 +22,10 @@ public class EnemyBase : MonoBehaviour
     [Header("Basic Info")]
     public string enemyName = "Enemy";
     public Faction faction;
+    public bool isDark;
+    public SkinnedMeshRenderer bodyMesh;
+    public Material bossGlowMaterial;
+    public Material bossDarkMaterial;
 
     [Header("玩家")]
     public ThirdPersonController player;
@@ -110,6 +114,10 @@ public class EnemyBase : MonoBehaviour
     public float retreatMaxTime = 2f;
     private float _retreatTimer;
 
+    [Header("回旋镖")]
+    public Boomerang boomerangPrefab;
+    public Transform throwPoint;
+
     [Header("动画参数")]
     public int _patrolIndex = 0;
     public bool _isAttacking = false;
@@ -192,7 +200,10 @@ public class EnemyBase : MonoBehaviour
 
     private void Update()
     {
-        
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            ChangeColor();
+        }
 
         FallBackMove();
         HitBackMove();
@@ -216,6 +227,21 @@ public class EnemyBase : MonoBehaviour
         
 
 
+    }
+
+    public void ChangeColor()
+    {
+        isDark = !isDark;
+        if (isDark)
+        {
+            bodyMesh.material = bossDarkMaterial;
+        }
+        else
+        {
+            
+            bodyMesh.material=bossGlowMaterial;
+            
+        }
     }
     void ChangeState(EnemyState newState)
     {
@@ -402,25 +428,11 @@ public class EnemyBase : MonoBehaviour
 
         if (state == EnemyState.Attack && !_isStunned && state != EnemyState.Dead)
         {
-            //float dist = DistanceToPlayer();
-            //if (dist > attackRange * 1.2f)
-            //{
-            //    // 玩家跑远了，结束攻击转回追击
-            //    ChangeState(EnemyState.Chase);
-            //    break;
-            //}
-
-            // 1. 三连击（一个动画，内部用动画事件打三段）
+            
             FacePlayerIfNear();
             animator.SetBool("isJumpAttack", isJumpAttack);
             animator.SetTrigger("Combo");
-            //yield return null;
-            
-            //yield return new WaitForSeconds();
-            //SetNavMode(true);
-            //animator.applyRootMotion = false;
-            //ChangeState(EnemyState.Idle);
-            
+                       
         }
 
         //_isAttacking = false;
@@ -549,7 +561,7 @@ public class EnemyBase : MonoBehaviour
         // 示例：小硬直动画
         if (animator != null)
         {
-            animator.SetTrigger("Hit");
+            //animator.SetTrigger("Hit");
         }
 
         // TODO: 在这里触发受击特效 / 闪白等
@@ -570,7 +582,9 @@ public class EnemyBase : MonoBehaviour
         }
         animator.SetFloat("MoveSpeed", 0f);
         hpBar.gameObject.SetActive(false);
+        stanceBar.gameObject.SetActive(false);
         ThirdPersonController.Instance.ReleaseLock();
+        //ThirdPersonController.Instance.isExecutingView = false;
 
         // 禁用碰撞
         //if (mainCollider != null)
@@ -588,8 +602,7 @@ public class EnemyBase : MonoBehaviour
         OnKilled?.Invoke(this);
         Destroy(gameObject, 2f);
 
-        // 这里不直接 Destroy，给子类机会控制消失时机
-        // 比如：StartCoroutine(DelayedDestroy());
+
     }
 
     #endregion
@@ -680,9 +693,6 @@ public class EnemyBase : MonoBehaviour
         
         ChangeState(EnemyState.GetHit);
 
-        //_isKnockback = true;
-        //StopCoroutine(nameof(EndKnockback));
-        //StartCoroutine(EndKnockback());
     }
 
     private void ChanceRetreat()
@@ -690,6 +700,10 @@ public class EnemyBase : MonoBehaviour
         if (UnityEngine.Random.Range(0,100)>40)
         {
             StartRetreat();
+        }
+        else
+        {
+
         }
     }
 
@@ -708,10 +722,13 @@ public class EnemyBase : MonoBehaviour
 
     public void ShowExecutionMarker()
     {
-        Destroy(transform.GetChild(0).transform.GetChild(0).gameObject);
+        if(transform.GetChild(0).childCount!=0)
+            Destroy(transform.GetChild(0).transform.GetChild(0).gameObject);
         currExecutionMarker = Instantiate(executionMarkPrefab, transform.GetChild(0)).transform;
         player.canExecute = true;
         Debug.Log("生成斩杀点");
+        player.StartLock();
+        //CameraModeController.Instance.SetLockOn(true,transform);
     }
 
     public void HideExecutionMarker()
@@ -722,15 +739,17 @@ public class EnemyBase : MonoBehaviour
     public void PlayExecutionAnim()
     {
         animator.SetTrigger("TakeExecution");
-        Invoke("Recover", 2f);
+        Invoke("Recover", 1.8f);
     }
 
     public void ShowBloodEffect()
     {
+        if(currBloodVfx!=null)
+            Destroy(currBloodVfx.gameObject);
         currBloodVfx = Instantiate(BloodVfxPrefab,BloodPoint);
         currBloodVfx.parent = null;
-        TakeDamage(30f);
-        Destroy(currBloodVfx.gameObject,1f);
+        TakeDamage(15f);
+        
 
     }
 
@@ -739,6 +758,22 @@ public class EnemyBase : MonoBehaviour
     {
         animator.SetTrigger("Recover");
         stanceBar.ResetStance();
+    }
+
+    public void ThrowBoomerang()
+    {
+        if (boomerangPrefab == null || throwPoint == null || player == null) return;
+
+        var boomerang = Instantiate(boomerangPrefab, throwPoint.position, throwPoint.rotation);
+
+        Vector3 initialDir = (player.transform.position + Vector3.up * 1.0f - throwPoint.position).normalized;
+
+        boomerang.Init(
+            owner: transform,
+            initialDir: initialDir,
+            player: player.transform,
+            useHomingOnOut: false   // 想试弱追踪就改成 true
+        );
     }
 
     void SetNavMode(bool useNav)

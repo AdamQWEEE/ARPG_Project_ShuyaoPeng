@@ -27,16 +27,25 @@ public class Sword : MonoBehaviour
             if (playerController.canTakeDamage)
             {
                 EnemyBase enemy = other.GetComponent<EnemyBase>();
-                enemy.TakeDamage(8);
-                enemy.AddStance(5f);
-                if (enemy.currentHealth > 0)
-                {
-                    if (Random.Range(0, 100) > 50)
-                    {
-                        enemy.ApplyKnockback(playerController.transform.position);
+                if (playerController.isDark != enemy.isDark) { 
 
+                    enemy.TakeDamage(8);
+                    enemy.AddStance(5f);
+                    if (enemy.currentHealth > 0)
+                    {
+                        if (Random.Range(0, 100) > 50)
+                        {
+                            enemy.ApplyKnockback(playerController.transform.position);
+
+                        }
                     }
+
                 }
+                else
+                {
+                    enemy.TakeDamage(2);
+                }
+                
 
                 playerController.canTakeDamage = false;
             }

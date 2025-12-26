@@ -179,6 +179,13 @@ namespace StarterAssets
         [SerializeField] private float executeCameraLerpSpeed = 10f;
         public bool isExecutingView;
         public bool canExecute;
+
+        [Header("SwitchSword")]
+        public Material darkSwordMaterial;
+        public Material glowSwordMaterial;
+        public GameObject darkSwordEffect;
+        public GameObject glowSwordEffect;
+        public bool isDark;
         
         //private bool isExecuting;
 
@@ -650,14 +657,18 @@ namespace StarterAssets
             if (Input.GetKeyDown(KeyCode.F)&&canExecute)
             {
                 ChangeExecutionView();
+                canExecute = false;
+                Debug.Log("执行处决");
                 _animator.SetTrigger("Execution");
                 playerWeapon.SetStabTransform();
+                lockTarget.GetComponent<EnemyBase>().HideExecutionMarker();
+                
             }
         }
 
         public void ApplyExecutionEffect()
         {
-            if(canExecute && isTargeting)
+            if(isTargeting)
                 lockTarget.GetComponent<EnemyBase>().PlayExecutionAnim();
         }
 
@@ -911,23 +922,16 @@ namespace StarterAssets
 
         private void ChangeMovement()
         {
-            if (Input.GetKeyDown(KeyCode.Q)&&!isExecutingView)
+            if (Input.GetKeyDown(KeyCode.Q)&&!isExecutingView&&!canExecute)
             {
                 if (_animator.GetFloat("LockOn") == 0f)
                 {
-                    EnemyBase nearest = EnemyManager.Instance.GetNearestEnemy(transform.position, lockOnRadius);
-                    if (nearest != null) {
 
-                        lockTarget = nearest.transform;
-                        CameraModeController.Instance.SetLockOn(true, lockTarget);
-                        _animator.SetFloat("LockOn", 1f);
-                        LockCameraPosition=true;
-                        if (currentMarker != null)
-                            Destroy(currentMarker.gameObject);
+                    StartLock();
+                    if (currentMarker != null)
+                        Destroy(currentMarker.gameObject);
 
-                        currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
-                    }
-                    
+                    currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
                 }
                 else
                 {
@@ -952,17 +956,30 @@ namespace StarterAssets
                 //LockCameraPosition = false;
                 if (isTargeting)
                 {
-                    Destroy(lockTarget.GetChild(0).transform.GetChild(0).gameObject);
+                    //Destroy(lockTarget.GetChild(0).transform.GetChild(0).gameObject);
                     currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
                 }
             }
             
         }
+        public void StartLock()
+        {
+            EnemyBase nearest = EnemyManager.Instance.GetNearestEnemy(transform.position, lockOnRadius);
+            if (nearest != null)
+            {
 
+                lockTarget = nearest.transform;
+                CameraModeController.Instance.SetLockOn(true, lockTarget);
+                _animator.SetFloat("LockOn", 1f);
+                LockCameraPosition = true;
+                
+            }
+        }
         public void ReleaseLock()
         {
             CameraModeController.Instance.SetLockOn(false, null);
             _animator.SetFloat("LockOn", 0f);
+            
             canMove = true;
             LockCameraPosition = false;
             if (currentMarker != null)
@@ -977,6 +994,19 @@ namespace StarterAssets
                 _animator.SetBool("changeCombo", !_animator.GetBool("changeCombo"));
                 _animator.SetTrigger("Flip");
                 ResetCombo();
+                if (!isDark) {
+                    isDark = true;
+                    playerWeapon.GetComponent<MeshRenderer>().material = darkSwordMaterial;
+                    glowSwordEffect.SetActive(false);
+                    darkSwordEffect.SetActive(true);
+                }
+                else
+                {
+                    isDark = false;
+                    playerWeapon.GetComponent<MeshRenderer>().material = glowSwordMaterial;
+                    darkSwordEffect.SetActive(false);
+                    glowSwordEffect.SetActive(true);
+                }
                
             }
         }
