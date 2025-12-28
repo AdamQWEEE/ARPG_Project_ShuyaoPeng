@@ -84,6 +84,7 @@ public class EnemyBase : MonoBehaviour
     [Header("移动速度")]
     public float patrolSpeed = 2f;
     public float chaseSpeed = 3.5f;
+    public float springSpeed = 12f;
     public float backOffSpeed = 4f;
     public float backOffDistance = 2f;
 
@@ -131,6 +132,10 @@ public class EnemyBase : MonoBehaviour
     private Transform currBloodVfx;
     public Transform BloodPoint;
 
+    
+
+    
+
     private AnimatorStateInfo currstate;
 
     public enum EnemyState
@@ -142,7 +147,7 @@ public class EnemyBase : MonoBehaviour
         GetHit,
         Attack,
         Retreat,
-        
+        AttackSprint,
         Dead
     }
 
@@ -219,7 +224,7 @@ public class EnemyBase : MonoBehaviour
             case EnemyState.ReturnHome: UpdateReturnHome(); break;
             case EnemyState.Attack: UpdateAttack(); break;
             case EnemyState.Retreat: UpdateRetreat(); break;
-            
+            case EnemyState.AttackSprint: UpdateAttackSprint(); break;
             case EnemyState.Dead:  break;
         }
 
@@ -251,10 +256,12 @@ public class EnemyBase : MonoBehaviour
 
         switch (state)
         {
-            
+            case EnemyState.Chase:
+                animator.applyRootMotion=false;
+                break;
 
             case EnemyState.Attack:
-                agent.isStopped = true;
+                if(agent.enabled) agent.isStopped = true;
                 SetNavMode(false);
                 animator.applyRootMotion = true;
                 animator.SetFloat("MoveSpeed", agent.velocity.magnitude);
@@ -353,9 +360,10 @@ public class EnemyBase : MonoBehaviour
             return;
         }
 
-        agent.enabled = true;
+        agent.enabled = true;       
         agent.speed = chaseSpeed;
         animator.SetFloat("MoveSpeed", agent.velocity.magnitude);
+        
         agent.isStopped = false;
         agent.SetDestination(player.transform.position);
 
@@ -443,6 +451,34 @@ public class EnemyBase : MonoBehaviour
        attackRange=isJumpAttack? 3f : 1.5f;
     }
 
+    public void ShowCounterTip()
+    {
+        
+        
+        Tutorial.Instance.ShowCounterTip();
+        
+    }
+
+    public void ShowRollTip()
+    {
+        
+        
+        Tutorial.Instance.ShowRollTip();
+        
+    }
+
+    public void ResetPlayerRadius()
+    {
+        player.ChangeCharacterControllerRadius(0.25f);
+        
+    }
+
+    public void HideAllTip()
+    {
+        Time.timeScale = 1f;
+        Tutorial.Instance.HideTip();
+    }
+
 
     public void StartRetreat()
     {
@@ -490,6 +526,57 @@ public class EnemyBase : MonoBehaviour
         }
 
         
+    }
+    public void ChangeAfterThrow()
+    {
+        CancelInvoke();
+        if (isJumpAttack)
+        {
+            if(DistanceToPlayer()>attackRange)
+                ChangeState(EnemyState.AttackSprint);
+            else
+                ChangeState(EnemyState.Attack);
+        }
+        else
+        {
+            BackIdle();
+        }
+    }
+
+    void UpdateAttackSprint()
+    {
+        //SetNavMode(false);
+
+        if (player == null)
+        {
+            // 没玩家就回到 Idle（或 ReturnHome）
+            SetNavMode(true);
+            ChangeState(EnemyState.Idle);
+            return;
+        }
+
+        // 指向玩家的方向（只算水平）
+        Vector3 toPlayer = player.transform.position - transform.position;
+        toPlayer.y = 0f;
+
+        float dist = toPlayer.magnitude;
+        if (dist <= attackRange)
+        {
+            // 进入攻击 / 跳劈
+            ChangeState(EnemyState.Attack);
+            return;
+        }
+
+        if (dist > 0.0001f)
+        {
+            Vector3 dir = toPlayer / dist; // 等价于 normalized
+
+            // 位移
+            transform.position += dir * 12f * Time.deltaTime;
+
+            // 朝向插值到玩家方向
+            FacePlayerIfNear();
+        }
     }
 
     public void BackIdle()
@@ -728,6 +815,7 @@ public class EnemyBase : MonoBehaviour
         player.canExecute = true;
         Debug.Log("生成斩杀点");
         player.StartLock();
+        Tutorial.Instance.ShowExecutionTip();
         //CameraModeController.Instance.SetLockOn(true,transform);
     }
 

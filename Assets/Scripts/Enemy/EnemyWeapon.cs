@@ -42,7 +42,7 @@ public class EnemyWeapon : MonoBehaviour
             {
                 ThirdPersonController player=other.GetComponent<ThirdPersonController>();
 
-                if (player.isCounter)
+                if (player.isCounter|| player.isCounterReward)
                 {
                     
                     player.ShowCounterEffect();
@@ -51,12 +51,17 @@ public class EnemyWeapon : MonoBehaviour
                     if (stateInfo.IsName("Jumpattack"))
                     {
                         isCounterHeavy = true;
+                        
                     }
+                    player.isCounterReward=false;
+                    //player.isCounter=false;
+                    return;
                 }
                 else
                 {
-                    player.playerState.TakeDamage(20);
+                    player.playerState.TakeDamage(10);
                     Debug.Log("´òµ½Íæ¼Ò");
+                    //enemy.HideAllTip();
                     enemy.canApplyDamage = false;
                     if (stateInfo.IsName("Jumpattack"))
                     {

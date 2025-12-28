@@ -103,7 +103,7 @@ MonoBehaviour:
   forwardSpeed: 25
   returnSpeed: 18
   maxDistance: 15
-  rotateSpeed: 720
+  rotateSpeed: 3000
   useHomingOnOut: 0
   homingTurnSpeed: 6
   damage: 20

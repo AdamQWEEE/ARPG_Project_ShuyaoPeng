@@ -186,7 +186,10 @@ namespace StarterAssets
         public GameObject darkSwordEffect;
         public GameObject glowSwordEffect;
         public bool isDark;
-        
+        public bool triggerCounterTutorial;
+
+        public bool isCounterReward;
+
         //private bool isExecuting;
 
 
@@ -518,7 +521,7 @@ namespace StarterAssets
 
         private void Attack()
         {
-            if (stateInfo.IsName("Backflip"))
+            if (stateInfo.IsName("Backflip") && canExecute)
                 return;
 
             bool canStartFirstAttackNow =(attack_num == 0) && (!isRolling || canRollAttack); 
@@ -662,6 +665,7 @@ namespace StarterAssets
                 _animator.SetTrigger("Execution");
                 playerWeapon.SetStabTransform();
                 lockTarget.GetComponent<EnemyBase>().HideExecutionMarker();
+                Tutorial.Instance.HideTip();
                 
             }
         }
@@ -678,7 +682,14 @@ namespace StarterAssets
             {
                 _input.defense=false;
                 _animator.SetTrigger("Defense");
-                isCounter = true;
+                //isCounter = true;
+                if (Time.timeScale != 1f)
+                {
+                    Time.timeScale=1f;
+                    Tutorial.Instance.isFinishCounterTip = true;
+                    isCounterReward = true;
+                    Tutorial.Instance.HideTip();
+                }
                 
             }
         }
@@ -687,6 +698,7 @@ namespace StarterAssets
         {
             defenseEffect.SetActive(false);
             defenseEffect.SetActive(true);
+            isCounter = false;
         }
 
 
@@ -901,6 +913,14 @@ namespace StarterAssets
                     isRolling = true;
                     playerState.ConsumeEnergy();
                     playerState.recoverEnergy = false;
+
+                    if (Time.timeScale != 1f)
+                    {
+                        Time.timeScale = 1f;
+                        Tutorial.Instance.isFinishRollTip = true;
+
+                    }
+                    Tutorial.Instance.HideTip();
 
                 }
                 
@@ -1312,6 +1332,10 @@ namespace StarterAssets
                 GroundedRadius);
         }
 
+        public void ChangeCharacterControllerRadius(float rate)
+        {
+            GetComponent<CharacterController>().radius = rate;
+        }
         private void OnFootstep(AnimationEvent animationEvent)
         {
             if (animationEvent.animatorClipInfo.weight > 0.5f)

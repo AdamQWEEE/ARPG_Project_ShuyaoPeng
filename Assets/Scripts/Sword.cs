@@ -6,6 +6,8 @@ public class Sword : MonoBehaviour
     public ThirdPersonController playerController;
     public Transform stabWeaponTransform;
     public Transform originalTransform;
+    public float knockCoolTime;
+    
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -16,7 +18,7 @@ public class Sword : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        knockCoolTime-=Time.deltaTime;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -33,9 +35,10 @@ public class Sword : MonoBehaviour
                     enemy.AddStance(5f);
                     if (enemy.currentHealth > 0)
                     {
-                        if (Random.Range(0, 100) > 50)
+                        if (Random.Range(0, 100) > 40 && knockCoolTime<=0)
                         {
                             enemy.ApplyKnockback(playerController.transform.position);
+                            knockCoolTime = 2f;
 
                         }
                     }
