@@ -54,11 +54,17 @@ public class EnemyWeapon : MonoBehaviour
                         
                     }
                     player.isCounterReward=false;
+                    AudioManager.Instance.PlayCounter();
                     //player.isCounter=false;
                     return;
                 }
                 else
                 {
+                    if (player.isRollReward)
+                    {
+                        player.isRollReward=false;
+                        return;
+                    }
                     player.playerState.TakeDamage(10);
                     Debug.Log("´òµ½Íæ¼Ò");
                     //enemy.HideAllTip();

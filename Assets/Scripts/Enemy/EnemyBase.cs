@@ -467,6 +467,11 @@ public class EnemyBase : MonoBehaviour
         
     }
 
+    public void ChangePlayerRadius()
+    {
+        player.ChangeCharacterControllerRadius(0.3f);
+    }
+
     public void ResetPlayerRadius()
     {
         player.ChangeCharacterControllerRadius(0.25f);

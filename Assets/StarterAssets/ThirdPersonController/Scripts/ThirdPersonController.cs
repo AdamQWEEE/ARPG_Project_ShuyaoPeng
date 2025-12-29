@@ -189,6 +189,7 @@ namespace StarterAssets
         public bool triggerCounterTutorial;
 
         public bool isCounterReward;
+        public bool isRollReward;
 
         //private bool isExecuting;
 
@@ -586,6 +587,7 @@ namespace StarterAssets
 
         private void ExecuteAttack()
         {
+
             if (isTargeting && lockTarget != null)
             {
                 Vector3 toTarget = lockTarget.position - transform.position;
@@ -611,6 +613,8 @@ namespace StarterAssets
                         // transform.rotation = Quaternion.RotateTowards(currentRot, targetRot, maxStep);
                     }
                 }
+
+                
             }
 
            
@@ -635,7 +639,8 @@ namespace StarterAssets
             canImmediatelyAttack = false;            
             canChainNext = false;
             bufferAttack = false;
-            
+            AudioManager.Instance.PlayAttack();
+
         }
 
         private void UpdateAttackFacing()
@@ -918,6 +923,7 @@ namespace StarterAssets
                     {
                         Time.timeScale = 1f;
                         Tutorial.Instance.isFinishRollTip = true;
+                        isRollReward = true;
 
                     }
                     Tutorial.Instance.HideTip();

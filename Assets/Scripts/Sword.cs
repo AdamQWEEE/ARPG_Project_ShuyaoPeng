@@ -29,10 +29,12 @@ public class Sword : MonoBehaviour
             if (playerController.canTakeDamage)
             {
                 EnemyBase enemy = other.GetComponent<EnemyBase>();
+                AudioManager.Instance.PlayHit();
                 if (playerController.isDark != enemy.isDark) { 
 
                     enemy.TakeDamage(8);
                     enemy.AddStance(5f);
+                    
                     if (enemy.currentHealth > 0)
                     {
                         if (Random.Range(0, 100) > 40 && knockCoolTime<=0)

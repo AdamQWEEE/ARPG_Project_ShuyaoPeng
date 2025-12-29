@@ -76,6 +76,13 @@ ModelImporter:
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
+      - time: 0.60795873
+        functionName: ResetPlayerRadius
+        data: 
+        objectReferenceParameter: {instanceID: 0}
+        floatParameter: 0
+        intParameter: 0
+        messageOptions: 0
       - time: 0.680048
         functionName: CloseDamageWindow
         data: 
@@ -90,14 +97,14 @@ ModelImporter:
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.7343679
+      - time: 0.7316146
         functionName: ShowRollTip
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.7464108
+      - time: 0.74365747
         functionName: HideAllTip
         data: 
         objectReferenceParameter: {instanceID: 0}
@@ -111,8 +118,8 @@ ModelImporter:
         floatParameter: 0
         intParameter: 0
         messageOptions: 0
-      - time: 0.60795873
-        functionName: ResetPlayerRadius
+      - time: 0.3349311
+        functionName: ChangePlayerRadius
         data: 
         objectReferenceParameter: {instanceID: 0}
         floatParameter: 0
