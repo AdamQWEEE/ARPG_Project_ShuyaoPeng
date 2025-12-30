@@ -116,7 +116,7 @@ public class Tutorial : Singleton<Tutorial>
         Time.timeScale = 0.03f;
         currentTip = counterTip;
         currentTip.SetActive(true);
-        ThirdPersonController.Instance.ChangeCharacterControllerRadius(0.3f);
+        //ThirdPersonController.Instance.ChangeCharacterControllerRadius(0.3f);
     }
 
     public void ShowRollTip()

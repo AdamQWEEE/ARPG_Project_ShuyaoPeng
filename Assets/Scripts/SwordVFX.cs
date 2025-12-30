@@ -25,6 +25,7 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[0].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
 
     public void ShowVFX2()
@@ -37,6 +38,7 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[1].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
     public void ShowVFX3()
     {
@@ -48,6 +50,7 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[2].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
 
     public void ShowVFX4()
@@ -60,6 +63,7 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[3].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
 
     public void ShowVFX5()
@@ -72,6 +76,7 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[4].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
 
     public void ShowVFX6()
@@ -84,6 +89,7 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[5].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
 
     public void ShowVFX7()
@@ -96,6 +102,7 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[6].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
 
     public void ShowVFX8()
@@ -108,5 +115,6 @@ public class SwordVFX : MonoBehaviour
             }
         }
         swordEffects[7].SetActive(true);
+        AudioManager.Instance.PlayAttack();
     }
 }

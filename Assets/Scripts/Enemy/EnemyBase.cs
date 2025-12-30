@@ -132,6 +132,11 @@ public class EnemyBase : MonoBehaviour
     private Transform currBloodVfx;
     public Transform BloodPoint;
 
+    public float changeColorCoolTime=30f;
+
+    [Header("后处理特效球")]
+    public VolumeBall volumeball;
+
     
 
     
@@ -147,6 +152,7 @@ public class EnemyBase : MonoBehaviour
         GetHit,
         Attack,
         Retreat,
+        ChangeYinYang,
         AttackSprint,
         Dead
     }
@@ -205,10 +211,12 @@ public class EnemyBase : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.V))
+        if (changeColorCoolTime<0f && !player.canExecute && CameraModeController.Instance.vcamExecute.Priority == 0)
         {
-            ChangeColor();
+            ChangeState(EnemyState.ChangeYinYang);
+            changeColorCoolTime = 20f;
         }
+        changeColorCoolTime-=Time.deltaTime;
 
         FallBackMove();
         HitBackMove();
@@ -225,6 +233,7 @@ public class EnemyBase : MonoBehaviour
             case EnemyState.Attack: UpdateAttack(); break;
             case EnemyState.Retreat: UpdateRetreat(); break;
             case EnemyState.AttackSprint: UpdateAttackSprint(); break;
+            case EnemyState.ChangeYinYang: break;
             case EnemyState.Dead:  break;
         }
 
@@ -234,18 +243,23 @@ public class EnemyBase : MonoBehaviour
 
     }
 
+
     public void ChangeColor()
     {
         isDark = !isDark;
         if (isDark)
         {
             bodyMesh.material = bossDarkMaterial;
+            Instantiate(volumeball).transform.position=transform.GetChild(0).transform.position;
+            //VolumeController.Instance.ChangeDarkVolume();
         }
         else
         {
             
             bodyMesh.material=bossGlowMaterial;
-            
+            Instantiate(volumeball).transform.position = transform.GetChild(0).transform.position;
+            //VolumeController.Instance.ChangeLightVolume();
+
         }
     }
     void ChangeState(EnemyState newState)
@@ -269,7 +283,11 @@ public class EnemyBase : MonoBehaviour
                 _isAttacking = true;
                 break;
 
-            
+            case EnemyState.ChangeYinYang:
+                animator.SetTrigger("ChangeColor");
+                SetNavMode(false);
+                _isAttacking=false;
+                break;           
         }
     }
 
@@ -469,7 +487,7 @@ public class EnemyBase : MonoBehaviour
 
     public void ChangePlayerRadius()
     {
-        player.ChangeCharacterControllerRadius(0.3f);
+        player.ChangeCharacterControllerRadius(0.32f);
     }
 
     public void ResetPlayerRadius()
@@ -752,6 +770,7 @@ public class EnemyBase : MonoBehaviour
     public void OpenDamageWindow()
     {
         canApplyDamage = true;
+        //PlayAxeSound();
         //Debug.Log("触发攻击");
     }
 
@@ -785,6 +804,16 @@ public class EnemyBase : MonoBehaviour
         
         ChangeState(EnemyState.GetHit);
 
+    }
+
+    public void PlayAxeSound()
+    {
+        AudioManager.Instance.PlayAxeAttack();
+    }
+
+    public void PlayJumpAttackSound()
+    {
+        AudioManager.Instance.PlayJumpAttack();
     }
 
     private void ChanceRetreat()
@@ -822,6 +851,7 @@ public class EnemyBase : MonoBehaviour
         player.StartLock();
         Tutorial.Instance.ShowExecutionTip();
         //CameraModeController.Instance.SetLockOn(true,transform);
+        AudioManager.Instance.PlayExecute();
     }
 
     public void HideExecutionMarker()
@@ -842,6 +872,7 @@ public class EnemyBase : MonoBehaviour
         currBloodVfx = Instantiate(BloodVfxPrefab,BloodPoint);
         currBloodVfx.parent = null;
         TakeDamage(15f);
+        AudioManager.Instance.PlayExecuteDamage();
         
 
     }
@@ -867,8 +898,13 @@ public class EnemyBase : MonoBehaviour
             player: player.transform,
             useHomingOnOut: false   // 想试弱追踪就改成 true
         );
+        AudioManager.Instance.PlayThrow();
     }
-
+    public void EnableNavMesh()
+    {
+        SetNavMode(true);
+        Debug.Log("回到正常");
+    }
     void SetNavMode(bool useNav)
     {
         if (useNav)

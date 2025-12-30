@@ -191,6 +191,10 @@ namespace StarterAssets
         public bool isCounterReward;
         public bool isRollReward;
 
+        [Header("GetHit")]
+        public bool isHitState;
+
+
         //private bool isExecuting;
 
 
@@ -256,7 +260,7 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
 
-            if (!isFliping)
+            if (!isFliping&& !isHitState)
             {
 
                 JumpAndGravity();
@@ -522,7 +526,7 @@ namespace StarterAssets
 
         private void Attack()
         {
-            if (stateInfo.IsName("Backflip") && canExecute)
+            if (stateInfo.IsName("Backflip") || CameraModeController.Instance.vcamExecute.Priority>0||canExecute)
                 return;
 
             bool canStartFirstAttackNow =(attack_num == 0) && (!isRolling || canRollAttack); 
@@ -639,7 +643,7 @@ namespace StarterAssets
             canImmediatelyAttack = false;            
             canChainNext = false;
             bufferAttack = false;
-            AudioManager.Instance.PlayAttack();
+            
 
         }
 
@@ -671,6 +675,7 @@ namespace StarterAssets
                 playerWeapon.SetStabTransform();
                 lockTarget.GetComponent<EnemyBase>().HideExecutionMarker();
                 Tutorial.Instance.HideTip();
+                AudioManager.Instance.PlayBeginExecution();
                 
             }
         }
@@ -832,6 +837,7 @@ namespace StarterAssets
             if(!isRolling)
                 playerState.recoverEnergy = true;
             canFlipToMove = true;
+            
         }
         private void RollAccelerate()
         {
@@ -918,15 +924,17 @@ namespace StarterAssets
                     isRolling = true;
                     playerState.ConsumeEnergy();
                     playerState.recoverEnergy = false;
+                    AudioManager.Instance.PlayRoll();
 
-                    if (Time.timeScale != 1f)
+                    if (Time.timeScale != 1f &&!Tutorial.Instance.isFinishRollTip)
                     {
                         Time.timeScale = 1f;
                         Tutorial.Instance.isFinishRollTip = true;
                         isRollReward = true;
+                        Tutorial.Instance.HideTip();
 
                     }
-                    Tutorial.Instance.HideTip();
+                    
 
                 }
                 
@@ -979,11 +987,13 @@ namespace StarterAssets
             else
             {
                 CameraModeController.Instance.EndExecuteCamera();
+                GameObject.Find("Boss").GetComponent<EnemyBase>().changeColorCoolTime = 10f;
                 //LockCameraPosition = false;
                 if (isTargeting)
                 {
                     //Destroy(lockTarget.GetChild(0).transform.GetChild(0).gameObject);
                     currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
+                    
                 }
             }
             
@@ -1033,6 +1043,7 @@ namespace StarterAssets
                     darkSwordEffect.SetActive(false);
                     glowSwordEffect.SetActive(true);
                 }
+                AudioManager.Instance.PlaySwordWave();
                
             }
         }
@@ -1093,10 +1104,15 @@ namespace StarterAssets
                     float y0 = Mathf.Lerp(_animator.GetFloat("inputY"), 0f, Time.deltaTime * 10f);
                     _animator.SetFloat("inputX", x0);
                     _animator.SetFloat("inputY", y0);
+                    AudioManager.Instance.StopFootStep();
                     return;
                 }
+                else
+                {
+                    AudioManager.Instance.PlayFootStepSFX();
+                }
 
-                Vector3 localMove = new Vector3(move.x, 0f, move.y);
+                    Vector3 localMove = new Vector3(move.x, 0f, move.y);
                 localMove = Vector3.ClampMagnitude(localMove, 1f);  // 保证最大长度 1
 
                 // 转到世界空间：forward = 面向敌人，right = 围着敌人绕圈
@@ -1120,6 +1136,8 @@ namespace StarterAssets
                     float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), localMove.z, Time.deltaTime * 10f);
                     _animator.SetFloat("inputX", inputX_blend);
                     _animator.SetFloat("inputY", inputY_blend);
+                    
+
                 }
                 else
                 {
@@ -1136,7 +1154,8 @@ namespace StarterAssets
             }
             else
             {
-                
+                AudioManager.Instance.StopFootStep();
+
                 if (_input.move != Vector2.zero && !isRolling)
                 {
 
@@ -1150,7 +1169,12 @@ namespace StarterAssets
                     //if(_input.move.x>0)
                     transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
                     //Animator animator = GetComponent<Animator>();
+                    
 
+                }
+                else
+                {
+                    
                 }
                 float inputX_blend = Mathf.Lerp(_animator.GetFloat("inputX"), _input.move.x, Time.deltaTime * 10f);
                 float inputY_blend = Mathf.Lerp(_animator.GetFloat("inputY"), _input.move.y, Time.deltaTime * 10f);
@@ -1221,11 +1245,16 @@ namespace StarterAssets
                 // rotate to face input direction relative to camera position
                 transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
                 //Animator animator = GetComponent<Animator>();
+                AudioManager.Instance.PlayFootStepSFX();
                 
+            }
+            else
+            {
+                AudioManager.Instance.StopFootStep();
             }
 
 
-            Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
+                Vector3 targetDirection = Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
             if (!canFlipToMove)
             {
@@ -1341,6 +1370,23 @@ namespace StarterAssets
         public void ChangeCharacterControllerRadius(float rate)
         {
             GetComponent<CharacterController>().radius = rate;
+        }
+
+        public void GetHit()
+        {
+            _animator.SetTrigger("getHit");
+            ResetCombo();
+
+        }
+
+        public void BeginHit()
+        {
+            isHitState = true;
+        }
+
+        public void EndHit()
+        {
+            isHitState= false;
         }
         private void OnFootstep(AnimationEvent animationEvent)
         {

@@ -47,9 +47,11 @@ public class SwordWave : MonoBehaviour
         if (other.CompareTag("Enemy"))
         {
             EnemyBase enemy = other.gameObject.GetComponent<EnemyBase>();
+            if (enemy.state == EnemyBase.EnemyState.ChangeYinYang) return;
+
             if (ThirdPersonController.Instance.isDark != enemy.isDark)
             {               
-                enemy.TakeDamage(10);
+                enemy.TakeDamage(8);
                 enemy.FallBack();
                 GetComponent<BoxCollider>().enabled = false;
             }
@@ -57,6 +59,7 @@ public class SwordWave : MonoBehaviour
             {
                 enemy.TakeDamage(2);
             }
+            AudioManager.Instance.PlayHit();
         }
     }
 }

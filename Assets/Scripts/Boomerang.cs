@@ -108,6 +108,7 @@ public class Boomerang : MonoBehaviour
         // 这里调用玩家受伤逻辑
         var player = other.GetComponent<ThirdPersonController>();
         player.playerState.TakeDamage(damage);
+        AudioManager.Instance.PlayHitPlayer();
 
         if (_phase == Phase.Outbound) _hasHitPlayerOnOut = true;
         else _hasHitPlayerOnReturn = true;

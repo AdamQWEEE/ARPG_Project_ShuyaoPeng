@@ -66,6 +66,10 @@ public class EnemyWeapon : MonoBehaviour
                         return;
                     }
                     player.playerState.TakeDamage(10);
+                    if (Random.Range(0, 100) > 50)
+                    {
+                        player.GetHit();
+                    }
                     Debug.Log("´òµ½Íæ¼Ò");
                     //enemy.HideAllTip();
                     enemy.canApplyDamage = false;
@@ -73,6 +77,7 @@ public class EnemyWeapon : MonoBehaviour
                     {
                         isCounterHeavy = false;
                     }
+                    AudioManager.Instance.PlayHitPlayer();
 
                 }
 

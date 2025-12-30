@@ -30,9 +30,12 @@ public class Sword : MonoBehaviour
             {
                 EnemyBase enemy = other.GetComponent<EnemyBase>();
                 AudioManager.Instance.PlayHit();
+
+                if(enemy.state==EnemyBase.EnemyState.ChangeYinYang) return;
+
                 if (playerController.isDark != enemy.isDark) { 
 
-                    enemy.TakeDamage(8);
+                    enemy.TakeDamage(5);
                     enemy.AddStance(5f);
                     
                     if (enemy.currentHealth > 0)
@@ -48,7 +51,7 @@ public class Sword : MonoBehaviour
                 }
                 else
                 {
-                    enemy.TakeDamage(2);
+                    enemy.TakeDamage(1);
                 }
                 
 
