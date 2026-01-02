@@ -22,6 +22,9 @@ public class AudioManager : Singleton<AudioManager>
     public AudioClip beginExecutionClip;
     public AudioClip throwClip;
     public AudioClip playerFootStep;
+    public AudioClip throwFireBall;
+    public AudioClip fireballHit;
+    public AudioClip axeExplode;
     private bool isPlayFootStep;
 
 
@@ -53,6 +56,12 @@ public class AudioManager : Singleton<AudioManager>
     public void PlayBeginExecution() => PlaySFX(beginExecutionClip);
 
     public void PlayThrow() => PlaySFX(throwClip);
+
+    public void PlayThrowFireBall() => PlaySFX(throwFireBall);
+
+    public void PlayFireBallHit() => PlaySFX(fireballHit);
+
+    public void PlayAxeExplode() => PlaySFX(axeExplode);
 
     public void PlayMusic(AudioClip clip, bool loop = true)
     {

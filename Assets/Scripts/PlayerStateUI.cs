@@ -6,6 +6,8 @@ public class PlayerStateUI : MonoBehaviour
     public bool recoverEnergy;
     public Image energyBar;
     public float energy_per_attack;
+    [Header("MagicBar")]
+    public Image magicBar;
 
     [Header("Refs")]
 
@@ -63,6 +65,14 @@ public class PlayerStateUI : MonoBehaviour
             energyBar.fillAmount -= energy_per_attack;
         }
         
+    }
+
+    public void ConsumeMagic(float amount)
+    {
+        if(magicBar.fillAmount > 0f)
+        {
+            magicBar.fillAmount -= amount;
+        }
     }
 
     public void TakeDamage(float damage)

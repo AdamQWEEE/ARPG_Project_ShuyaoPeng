@@ -116,7 +116,7 @@ namespace StarterAssets
         public bool canMove;
         private bool roll_accelerate;
         private bool flip_accelerate;
-        private bool isFliping;
+        public bool isFliping;
         public bool canFlipToMove;
         Vector3 _rollDir;
         private AnimatorStateInfo stateInfo;
@@ -187,6 +187,7 @@ namespace StarterAssets
         public GameObject glowSwordEffect;
         public bool isDark;
         public bool triggerCounterTutorial;
+        public float switchCoolDown = 0f;
 
         public bool isCounterReward;
         public bool isRollReward;
@@ -194,6 +195,9 @@ namespace StarterAssets
         [Header("GetHit")]
         public bool isHitState;
 
+
+        [Header("HeavyAttack")]
+        public bool isHeavyAttack;
 
         //private bool isExecuting;
 
@@ -254,19 +258,21 @@ namespace StarterAssets
             _fallTimeoutDelta = FallTimeout;
             playerState = GetComponent<PlayerStateUI>();
             //Time.timeScale = 0.5f;
+            Tutorial.Instance.ShowPerspectiveTip();
         }
 
         private void Update()
         {
             _hasAnimator = TryGetComponent(out _animator);
 
-            if (!isFliping&& !isHitState)
+            if (!isFliping)
             {
 
                 JumpAndGravity();
                 GroundedCheck();
             
                 Attack();
+                HeavyAttack();
                 UpdateAttackFacing();
                 Counter();
                 Roll();
@@ -281,11 +287,27 @@ namespace StarterAssets
                 TakeExecution();
             }
 
+            switchCoolDown-=Time.deltaTime;
+
             FlipAccelerate();
 
             stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
             isTargeting = _animator.GetFloat("LockOn") == 1;
 
+            if(EnemyManager.Instance.GetNearestEnemy(transform.position, lockOnRadius) != null)
+            {
+                if (Tutorial.Instance.isFinishAttackTip &&!Tutorial.Instance.isFinishLockTip)
+                {
+                    Tutorial.Instance.ShowLockTip();
+                }
+            }
+            if (lockTarget != null && lockTarget.GetComponent<EnemyBase>().state == EnemyBase.EnemyState.ChangeYinYang)
+            {
+                if (!Tutorial.Instance.isFinishTossTip)
+                {
+                    Tutorial.Instance.ShowTossTip();
+                }
+            }
 
 
             isInCombo = comboStateNames.Any(name => stateInfo.IsName(name));
@@ -309,17 +331,21 @@ namespace StarterAssets
                 // 当前正在播放名为“你的动画状态名称”的动画
                 //Debug.Log("当前动画是：你的动画状态名称");
             }
-            else if(stateInfo.IsName("Dodge Roll"))
+            else if (stateInfo.IsName("heavyAttack"))
             {
-                if(_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.3f)
+                _animator.applyRootMotion = true;
+            }
+            else if (stateInfo.IsName("Dodge Roll"))
+            {
+                if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.3f)
                 {
                     _animator.applyRootMotion = false;
-                    canRollAttack=false;
-                    
-                    
+                    canRollAttack = false;
+
+
                     //canMove = false;
                 }
-                else if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime >0.3f && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.87f)
+                else if (_animator.GetCurrentAnimatorStateInfo(0).normalizedTime > 0.3f && _animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.87f)
                 {
                     canMove = false;
                     roll_accelerate = false;
@@ -327,12 +353,12 @@ namespace StarterAssets
                 }
                 else
                 {
-                    if(_animator.GetFloat("LockOn") != 1)
+                    if (_animator.GetFloat("LockOn") != 1)
                     {
                         _animator.applyRootMotion = false;
                         canMove = true;
                     }
-                    
+
 
                 }
             }
@@ -422,6 +448,12 @@ namespace StarterAssets
 
                 _cinemachineTargetYaw += _input.look.x * deltaTimeMultiplier;
                 _cinemachineTargetPitch += _input.look.y * deltaTimeMultiplier;
+                if (!Tutorial.Instance.isFinishPerspectiveTip)
+                {
+                    Tutorial.Instance.isFinishPerspectiveTip= true;
+                    Tutorial.Instance.HideTip();
+                    Tutorial.Instance.ShowMoveTip();
+                }
             }
 
             // clamp our rotations so our values are limited 360 degrees
@@ -643,6 +675,16 @@ namespace StarterAssets
             canImmediatelyAttack = false;            
             canChainNext = false;
             bufferAttack = false;
+
+            if (attack_num == 2)
+            {
+                if (Tutorial.Instance.isFinishJumpTip && !Tutorial.Instance.isFinishAttackTip)
+                {
+                    Tutorial.Instance.isFinishAttackTip = true;
+                    Tutorial.Instance.HideTip();
+                    Tutorial.Instance.ShowHeavyAttackTip();
+                }
+            }
             
 
         }
@@ -684,6 +726,20 @@ namespace StarterAssets
         {
             if(isTargeting)
                 lockTarget.GetComponent<EnemyBase>().PlayExecutionAnim();
+        }
+        public void HeavyAttack() {
+
+
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                _animator.SetTrigger("isHeavyAttack");
+                if (Tutorial.Instance.isFinishAttackTip && !Tutorial.Instance.isFinishHeavyAttackTip)
+                {
+                    Tutorial.Instance.isFinishHeavyAttackTip = true;
+                    Tutorial.Instance.HideTip();
+                    
+                }
+            }
         }
 
         private void Counter()
@@ -730,13 +786,19 @@ namespace StarterAssets
                 _animator.SetTrigger("Toss");
                 //CastFireball();
                 print("投掷");
+                if (!Tutorial.Instance.isFinishTossTip&&Tutorial.Instance.currentTip==Tutorial.Instance.tossTip)
+                {
+                    Tutorial.Instance.HideTip() ;
+                    Tutorial.Instance.isFinishTossTip = true;
+                }
+                playerState.ConsumeMagic(0.2f);
             }
         }
 
         void CastFireball()
         {
             if (fireballPrefab == null || firePoint == null) return;
-
+            AudioManager.Instance.PlayThrowFireBall();
             // 1. 生成火球
             FireBall proj = Instantiate(
                 fireballPrefab,
@@ -809,9 +871,23 @@ namespace StarterAssets
             canTakeDamage = true;
         }
 
+        
+
         public void CloseDamageWindow()
         {
             canTakeDamage = false;
+        }
+
+        public void OpenHeavyAttackWindow()
+        {
+            canTakeDamage = true;
+            isHeavyAttack=true;
+        }
+
+        public void CloseHeavyAttackWindow()
+        {
+            canTakeDamage = false;
+            isHeavyAttack = false;
         }
         public void OpenRollAttackWindow()
         {
@@ -925,6 +1001,7 @@ namespace StarterAssets
                     playerState.ConsumeEnergy();
                     playerState.recoverEnergy = false;
                     AudioManager.Instance.PlayRoll();
+                    
 
                     if (Time.timeScale != 1f &&!Tutorial.Instance.isFinishRollTip)
                     {
@@ -934,7 +1011,16 @@ namespace StarterAssets
                         Tutorial.Instance.HideTip();
 
                     }
-                    
+
+                    if (Time.timeScale != 1f && !Tutorial.Instance.isFinishRollTip_volumeBall)
+                    {
+                        Time.timeScale = 1f;
+                        Tutorial.Instance.isFinishRollTip_volumeBall = true;
+                        //isRollReward = true;
+                        Tutorial.Instance.HideTip();
+
+                    }
+
 
                 }
                 
@@ -964,7 +1050,11 @@ namespace StarterAssets
                     StartLock();
                     if (currentMarker != null)
                         Destroy(currentMarker.gameObject);
-
+                    if (!Tutorial.Instance.isFinishLockTip)
+                    {
+                        Tutorial.Instance.isFinishLockTip=true;
+                        Tutorial.Instance.HideTip();
+                    }
                     currentMarker = Instantiate(lockOnPrefab, lockTarget.GetChild(0));
                 }
                 else
@@ -987,7 +1077,8 @@ namespace StarterAssets
             else
             {
                 CameraModeController.Instance.EndExecuteCamera();
-                GameObject.Find("Boss").GetComponent<EnemyBase>().changeColorCoolTime = 10f;
+                if(GameObject.Find("Boss")!=null)
+                    GameObject.Find("Boss").GetComponent<EnemyBase>().changeColorCoolTime = 10f;
                 //LockCameraPosition = false;
                 if (isTargeting)
                 {
@@ -1024,7 +1115,7 @@ namespace StarterAssets
 
         private void ChangeCombo()
         {
-            if (Input.GetKeyDown(KeyCode.Tab))
+            if (Input.GetKeyDown(KeyCode.Tab)&& switchCoolDown<=0)
             {
                 isFliping = true;
                 _animator.SetBool("changeCombo", !_animator.GetBool("changeCombo"));
@@ -1032,6 +1123,7 @@ namespace StarterAssets
                 ResetCombo();
                 if (!isDark) {
                     isDark = true;
+                    SwitchSwordUI.Instance.ShowSwitchLightBtn();
                     playerWeapon.GetComponent<MeshRenderer>().material = darkSwordMaterial;
                     glowSwordEffect.SetActive(false);
                     darkSwordEffect.SetActive(true);
@@ -1039,12 +1131,19 @@ namespace StarterAssets
                 else
                 {
                     isDark = false;
+                    SwitchSwordUI.Instance.ShowSwitchDarkBtn();
                     playerWeapon.GetComponent<MeshRenderer>().material = glowSwordMaterial;
                     darkSwordEffect.SetActive(false);
                     glowSwordEffect.SetActive(true);
                 }
                 AudioManager.Instance.PlaySwordWave();
-               
+                if (!Tutorial.Instance.isFinishSwapTip)
+                {
+                    Tutorial.Instance.isFinishSwapTip=true;
+                    Tutorial.Instance.HideTip();
+                    Time.timeScale = 1f;
+                }
+
             }
         }
 
@@ -1246,7 +1345,14 @@ namespace StarterAssets
                 transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
                 //Animator animator = GetComponent<Animator>();
                 AudioManager.Instance.PlayFootStepSFX();
-                
+
+                if (Tutorial.Instance.isFinishPerspectiveTip && !Tutorial.Instance.isFinishMoveTip)
+                {
+                    Tutorial.Instance.isFinishMoveTip = true;
+                    Tutorial.Instance.HideTip();
+                    Tutorial.Instance.ShowJumpTip();
+                }
+
             }
             else
             {
@@ -1307,6 +1413,13 @@ namespace StarterAssets
                     if (_hasAnimator)
                     {
                         _animator.SetBool(_animIDJump, true);
+                    }
+
+                    if (Tutorial.Instance.isFinishMoveTip && !Tutorial.Instance.isFinishJumpTip)
+                    {
+                        Tutorial.Instance.isFinishJumpTip = true;
+                        Tutorial.Instance.HideTip();
+                        Tutorial.Instance.ShowAttackTip();
                     }
                 }
 
@@ -1387,6 +1500,30 @@ namespace StarterAssets
         public void EndHit()
         {
             isHitState= false;
+        }
+
+        public void ShowSwapTip()
+        {
+            if (!Tutorial.Instance.isFinishSwapTip)
+            {
+                Tutorial.Instance.ShowSwapTip();
+                //Time.timeScale = 0.05f;
+            }
+        }
+
+        public void PlayHeavyAttackSound()
+        {
+            AudioManager.Instance.PlayAttack();
+        }
+
+        public void PlayTossSound()
+        {
+            AudioManager.Instance.PlayThrowFireBall();
+        }
+
+        public void DelayShowSwapTip()
+        {
+            Invoke("ShowSwapTip",2f);
         }
         private void OnFootstep(AnimationEvent animationEvent)
         {

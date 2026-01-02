@@ -35,12 +35,12 @@ public class Sword : MonoBehaviour
 
                 if (playerController.isDark != enemy.isDark) { 
 
-                    enemy.TakeDamage(5);
+                    enemy.TakeDamage(4);
                     enemy.AddStance(5f);
                     
                     if (enemy.currentHealth > 0)
                     {
-                        if (Random.Range(0, 100) > 40 && knockCoolTime<=0)
+                        if (Random.Range(0, 100) > 60 && knockCoolTime<=0)
                         {
                             enemy.ApplyKnockback(playerController.transform.position);
                             knockCoolTime = 2f;
@@ -51,7 +51,7 @@ public class Sword : MonoBehaviour
                 }
                 else
                 {
-                    enemy.TakeDamage(1);
+                    enemy.TakeDamage(0.5f);
                 }
                 
 

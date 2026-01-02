@@ -60,7 +60,8 @@ public class FireBall : MonoBehaviour
     {
         if (other.gameObject.tag == "Enemy")
         {
-            other.gameObject.GetComponent<EnemyBase>().TakeDamage(30);
+            other.gameObject.GetComponent<EnemyBase>().TakeDamage(15);
+            AudioManager.Instance.PlayFireBallHit();
             Destroy(gameObject);
         }
     }

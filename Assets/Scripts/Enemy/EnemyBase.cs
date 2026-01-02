@@ -154,6 +154,7 @@ public class EnemyBase : MonoBehaviour
         Retreat,
         ChangeYinYang,
         AttackSprint,
+        GetExecuted,
         Dead
     }
 
@@ -214,7 +215,7 @@ public class EnemyBase : MonoBehaviour
         if (changeColorCoolTime<0f && !player.canExecute && CameraModeController.Instance.vcamExecute.Priority == 0)
         {
             ChangeState(EnemyState.ChangeYinYang);
-            changeColorCoolTime = 20f;
+            changeColorCoolTime = 30f;
         }
         changeColorCoolTime-=Time.deltaTime;
 
@@ -233,6 +234,7 @@ public class EnemyBase : MonoBehaviour
             case EnemyState.Attack: UpdateAttack(); break;
             case EnemyState.Retreat: UpdateRetreat(); break;
             case EnemyState.AttackSprint: UpdateAttackSprint(); break;
+            case EnemyState.GetExecuted: break;
             case EnemyState.ChangeYinYang: break;
             case EnemyState.Dead:  break;
         }
@@ -800,7 +802,7 @@ public class EnemyBase : MonoBehaviour
 
         isHit=true;
         //Invoke("ChanceRetreat", 1.5f);
-        Invoke("FinishGetHit", 2f);
+        Invoke("FinishGetHit", 1.5f);
         
         ChangeState(EnemyState.GetHit);
 
@@ -847,6 +849,7 @@ public class EnemyBase : MonoBehaviour
             Destroy(transform.GetChild(0).transform.GetChild(0).gameObject);
         currExecutionMarker = Instantiate(executionMarkPrefab, transform.GetChild(0)).transform;
         player.canExecute = true;
+        //ChangeState(EnemyState.GetExecuted);
         Debug.Log("Éú³ÉÕ¶É±µã");
         player.StartLock();
         Tutorial.Instance.ShowExecutionTip();
@@ -871,7 +874,7 @@ public class EnemyBase : MonoBehaviour
             Destroy(currBloodVfx.gameObject);
         currBloodVfx = Instantiate(BloodVfxPrefab,BloodPoint);
         currBloodVfx.parent = null;
-        TakeDamage(15f);
+        TakeDamage(10f);
         AudioManager.Instance.PlayExecuteDamage();
         
 

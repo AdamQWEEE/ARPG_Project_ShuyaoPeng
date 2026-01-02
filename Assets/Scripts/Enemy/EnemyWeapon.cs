@@ -25,6 +25,7 @@ public class EnemyWeapon : MonoBehaviour
             if (weaponEnd.transform.position.y < 0.1f && !isCounterHeavy)
             {
                 explodeItem= Instantiate(explodePrefab);
+                AudioManager.Instance.PlayAxeExplode();
                 explodeItem.position= weaponEnd.transform.position;
                 Destroy(explodeItem.gameObject, 1f);
                 
