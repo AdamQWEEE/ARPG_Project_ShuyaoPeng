@@ -109,6 +109,7 @@ public class EnemyBase : MonoBehaviour
     public float hitUpForce = 2f;
     public float stunDuration = 0.25f;     // 被打硬直时间
     public bool isHit;
+    public bool canGetHitBack;
 
     [Header("后撤步")]
     public float retreatMinDistance = 6f;   // 撤退到离玩家至少这么远
@@ -818,6 +819,7 @@ public class EnemyBase : MonoBehaviour
 
     public void ApplyKnockback(Vector3 attackerPosition)
     {
+        if (!canGetHitBack) return;
         //StopAllCoroutines();
         CancelInvoke();
         enemyModel.GetHit();
@@ -940,6 +942,15 @@ public class EnemyBase : MonoBehaviour
     public void OpenPlayerDamageWindow()
     {
         isLockHp=false;
+    }
+
+    public void CloseHitBackWindow()
+    {
+        canGetHitBack=false;
+    }
+    public void OpenHitBackWindow()
+    {
+        canGetHitBack = true;
     }
 
     public void DropAxe()

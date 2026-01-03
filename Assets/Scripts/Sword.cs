@@ -7,6 +7,7 @@ public class Sword : MonoBehaviour
     public Transform stabWeaponTransform;
     public Transform originalTransform;
     public float knockCoolTime;
+    public int hitEnemyNum;
     
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -30,6 +31,7 @@ public class Sword : MonoBehaviour
             {
                 EnemyBase enemy = other.GetComponent<EnemyBase>();
                 AudioManager.Instance.PlayHit();
+                hitEnemyNum++;
 
                 if(enemy.state==EnemyBase.EnemyState.ChangeYinYang||enemy.isLockHp) return;
 
@@ -41,7 +43,7 @@ public class Sword : MonoBehaviour
                     
                     if (enemy.currentHealth > 0)
                     {
-                        if (Random.Range(0, 100) > 60 && knockCoolTime<=0)
+                        if (Random.Range(0, 100) > 60 && knockCoolTime<=0 && hitEnemyNum>2)
                         {
                             enemy.ApplyKnockback(playerController.transform.position);
                             knockCoolTime = 2f;
