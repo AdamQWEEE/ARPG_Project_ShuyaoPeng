@@ -25,6 +25,7 @@ public class AudioManager : Singleton<AudioManager>
     public AudioClip throwFireBall;
     public AudioClip fireballHit;
     public AudioClip axeExplode;
+    public AudioClip getImpulse;
     private bool isPlayFootStep;
 
 
@@ -63,6 +64,8 @@ public class AudioManager : Singleton<AudioManager>
 
     public void PlayAxeExplode() => PlaySFX(axeExplode);
 
+    public void PlayGetImpulse() => PlaySFX(getImpulse);
+
     public void PlayMusic(AudioClip clip, bool loop = true)
     {
         if (clip == null || musicSource == null) return;
@@ -77,7 +80,7 @@ public class AudioManager : Singleton<AudioManager>
     public void StopMusic()
     {
         if (musicSource != null)
-            musicSource.Stop();
+            musicSource.Pause();
     }
 
 

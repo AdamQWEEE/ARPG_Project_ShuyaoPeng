@@ -137,9 +137,19 @@ public class EnemyBase : MonoBehaviour
     [Header("后处理特效球")]
     public VolumeBall volumeball;
 
-    
+    [Header("是否锁血")]
+    public bool isLockHp;
 
-    
+    [Header("AxeReward")]
+    public Transform axeRewardPrefab;
+
+    [Header("Wintext")]
+    public GameObject winText;
+    public GameObject divinity;
+
+
+
+
 
     private AnimatorStateInfo currstate;
 
@@ -660,6 +670,18 @@ public class EnemyBase : MonoBehaviour
         TakeDamage(amount, transform.position, Vector3.up);
     }
 
+    public void WaveDamage(float amount)
+    {
+        if (currentHealth - amount >= 0)
+        {
+            TakeDamage(amount);
+        }
+        else
+        {
+            TakeDamage(currentHealth-1);
+        }
+    }
+
     public void AddStance(float amount)
     {
         stanceBar.AddStance(amount);
@@ -712,6 +734,7 @@ public class EnemyBase : MonoBehaviour
         canBeLocked = false;
         enemyModel.Die();
         OnKilled?.Invoke(this);
+        Invoke("DropAxe", 1.9f);
         Destroy(gameObject, 2f);
 
 
@@ -908,6 +931,23 @@ public class EnemyBase : MonoBehaviour
         SetNavMode(true);
         Debug.Log("回到正常");
     }
+
+    public void ClosePlayerDamageWindow()
+    {
+        isLockHp = true;
+    }
+
+    public void OpenPlayerDamageWindow()
+    {
+        isLockHp=false;
+    }
+
+    public void DropAxe()
+    {
+        Instantiate(axeRewardPrefab).position=transform.position+new Vector3(0,0.2f,0);
+        winText.SetActive(true);
+        divinity.SetActive(true);
+    }
     void SetNavMode(bool useNav)
     {
         if (useNav)
@@ -930,5 +970,7 @@ public class EnemyBase : MonoBehaviour
 
         }
     }
+
+
 
 }

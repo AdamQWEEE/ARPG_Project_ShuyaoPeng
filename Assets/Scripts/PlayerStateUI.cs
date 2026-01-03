@@ -1,3 +1,4 @@
+using StarterAssets;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -90,6 +91,10 @@ public class PlayerStateUI : MonoBehaviour
         if (normalized < _bufferTarget)
             _bufferTarget = normalized;
         Debug.Log("造成一次伤害");
+        if (currentHp == 0)
+        {
+            GetComponent<ThirdPersonController>().PlayerDead();
+        }
     }
 
     /// <summary>如果以后有加血逻辑，可以单独控制缓冲条回升</summary>

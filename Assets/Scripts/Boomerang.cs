@@ -9,7 +9,7 @@ public class Boomerang : MonoBehaviour
     public float rotateSpeed = 720f;     // 自身旋转速度
     public bool useHomingOnOut = false;  // 是否在外圈阶段弱追踪玩家
     public float homingTurnSpeed = 3f;    // 追踪转向速度
-    public int damage = 20;
+    public int damage = 10;
 
     public LayerMask hitLayers;           // Player 所在层，用于简单筛选
 
@@ -107,8 +107,12 @@ public class Boomerang : MonoBehaviour
 
         // 这里调用玩家受伤逻辑
         var player = other.GetComponent<ThirdPersonController>();
-        player.playerState.TakeDamage(damage);
-        AudioManager.Instance.PlayHitPlayer();
+        if (!player.isDead)
+        {
+            player.playerState.TakeDamage(15f);
+            AudioManager.Instance.PlayHitPlayer();
+
+        }
 
         if (_phase == Phase.Outbound) _hasHitPlayerOnOut = true;
         else _hasHitPlayerOnReturn = true;

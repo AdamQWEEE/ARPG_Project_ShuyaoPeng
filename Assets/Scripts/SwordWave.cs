@@ -51,13 +51,13 @@ public class SwordWave : MonoBehaviour
 
             if (ThirdPersonController.Instance.isDark != enemy.isDark)
             {               
-                enemy.TakeDamage(8);
+                enemy.WaveDamage(8);
                 enemy.FallBack();
                 GetComponent<BoxCollider>().enabled = false;
             }
             else
             {
-                enemy.TakeDamage(2);
+                enemy.WaveDamage(2);
             }
             AudioManager.Instance.PlayHit();
         }

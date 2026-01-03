@@ -20,6 +20,9 @@ public class Tutorial : Singleton<Tutorial>
     public GameObject rollTip;
     public GameObject rollTip_volumeBall;
     public GameObject swapTip;
+    public GameObject interactTip;
+
+    
 
     [Header("是否成功展示提示,后面就不再展示")]
     public bool isFinishMoveTip;
@@ -36,6 +39,8 @@ public class Tutorial : Singleton<Tutorial>
     public bool isFinishRollTip_volumeBall;
     public bool isFinishSwapTip;
 
+    [Header("按键UI")]
+    public GameObject switchSwordBtn;
     // Start is called once before the first execution of Update after the MonoBehaviour is created
 
 
@@ -118,8 +123,15 @@ public class Tutorial : Singleton<Tutorial>
         currentTip = executionTip;
         currentTip.SetActive(true);
     }
-    
-    
+
+    public void ShowInteractTip()
+    {
+        InitAllTip();
+        currentTip = interactTip;
+        currentTip.SetActive(true);
+    }
+
+
     public void ShowCounterTip()
     {
         if (isFinishCounterTip) return;
@@ -158,6 +170,7 @@ public class Tutorial : Singleton<Tutorial>
         if(isFinishSwapTip) return;
         Time.timeScale = 0.03f;
         InitAllTip();
+        switchSwordBtn.SetActive(true);
         currentTip =swapTip;
         currentTip.SetActive(true);
     }

@@ -199,8 +199,13 @@ namespace StarterAssets
         [Header("HeavyAttack")]
         public bool isHeavyAttack;
 
-        //private bool isExecuting;
+        [Header("Die and Recover")]
+        public bool isDead;
+        public Transform bornPoint;
 
+        //private bool isExecuting;
+        [Header("AxeReward")]
+        public GameObject axeEquipped;
 
         private bool IsCurrentDeviceMouse
         {
@@ -264,8 +269,10 @@ namespace StarterAssets
         private void Update()
         {
             _hasAnimator = TryGetComponent(out _animator);
+            stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+            //bool isdead = stateInfo.IsName("Dead");
 
-            if (!isFliping)
+            if (!isFliping&&!isDead&&!LevelManager.Instance.isPause)
             {
 
                 JumpAndGravity();
@@ -291,7 +298,7 @@ namespace StarterAssets
 
             FlipAccelerate();
 
-            stateInfo = _animator.GetCurrentAnimatorStateInfo(0);
+            
             isTargeting = _animator.GetFloat("LockOn") == 1;
 
             if(EnemyManager.Instance.GetNearestEnemy(transform.position, lockOnRadius) != null)
@@ -377,11 +384,12 @@ namespace StarterAssets
 
             if (_animator.GetBool("isSneak") || isTargeting)
             {
-                EightDirectionMove();                    
+                if(!isDead && !LevelManager.Instance.isPause)
+                    EightDirectionMove();                    
             }
             else
             {
-                if(canMove)
+                if(canMove&&!isDead&& !LevelManager.Instance.isPause)
                     Move();
             }
             
@@ -402,13 +410,13 @@ namespace StarterAssets
 
                 if (isTargeting)
                 {
-
-                    LockOnCameraRotation();
+                    if (!LevelManager.Instance.isPause)
+                        LockOnCameraRotation();
                 }
                 else
                 {
-
-                    CameraRotation();
+                    if(!LevelManager.Instance.isPause)
+                        CameraRotation();
                 }
             }
             
@@ -730,7 +738,7 @@ namespace StarterAssets
         public void HeavyAttack() {
 
 
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKeyDown(KeyCode.R))
             {
                 _animator.SetTrigger("isHeavyAttack");
                 if (Tutorial.Instance.isFinishAttackTip && !Tutorial.Instance.isFinishHeavyAttackTip)
@@ -749,7 +757,7 @@ namespace StarterAssets
                 _input.defense=false;
                 _animator.SetTrigger("Defense");
                 //isCounter = true;
-                if (Time.timeScale != 1f)
+                if (Time.timeScale != 1f && !Tutorial.Instance.isFinishCounterTip)
                 {
                     Time.timeScale=1f;
                     Tutorial.Instance.isFinishCounterTip = true;
@@ -914,6 +922,16 @@ namespace StarterAssets
                 playerState.recoverEnergy = true;
             canFlipToMove = true;
             
+        }
+
+        public void ResetInput()
+        {
+            _input.attack = false;
+            
+            _input.roll = false;
+            _input.stab = false;
+            _input.toss = false;
+            Input.ResetInputAxes();
         }
         private void RollAccelerate()
         {
@@ -1115,7 +1133,7 @@ namespace StarterAssets
 
         private void ChangeCombo()
         {
-            if (Input.GetKeyDown(KeyCode.Tab)&& switchCoolDown<=0)
+            if (Input.GetKeyDown(KeyCode.Tab)&& switchCoolDown<=0 &&Tutorial.Instance.switchSwordBtn.activeInHierarchy)
             {
                 isFliping = true;
                 _animator.SetBool("changeCombo", !_animator.GetBool("changeCombo"));
@@ -1525,6 +1543,35 @@ namespace StarterAssets
         {
             Invoke("ShowSwapTip",2f);
         }
+
+        public void EquipAxe()
+        {
+            axeEquipped.SetActive(true);
+        }
+
+        public void PlayerDead()
+        {
+            _animator.SetTrigger("isDead");
+            _animator.SetBool("isRecover", false);
+            Invoke("PlayerRecover", 3f);
+            isDead = true;
+        }
+
+        public bool CheckDead()
+        {
+            return stateInfo.IsName("Dead");
+        }
+
+        public void PlayerRecover()
+        {
+            _animator.SetBool("isRecover",true);
+            _animator.ResetTrigger("isDead");
+            InitParameter();
+            isDead = false;
+            playerState.Heal(100);
+            transform.position=bornPoint.position;
+            transform.rotation=bornPoint.rotation;
+        }
         private void OnFootstep(AnimationEvent animationEvent)
         {
             if (animationEvent.animatorClipInfo.weight > 0.5f)
@@ -1543,6 +1590,13 @@ namespace StarterAssets
             {
                 AudioSource.PlayClipAtPoint(LandingAudioClip, transform.TransformPoint(_controller.center), FootstepAudioVolume);
             }
+        }
+
+        public void InitParameter()
+        {
+            isFliping = false;
+            ResetCombo();
+            //isRolling = false;
         }
     }
 }

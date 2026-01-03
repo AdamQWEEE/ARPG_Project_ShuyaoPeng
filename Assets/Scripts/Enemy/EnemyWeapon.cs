@@ -42,13 +42,14 @@ public class EnemyWeapon : MonoBehaviour
             if (enemy.canApplyDamage)
             {
                 ThirdPersonController player=other.GetComponent<ThirdPersonController>();
+                if (player.isDead) return;
 
                 if (player.isCounter|| player.isCounterReward)
                 {
                     
                     player.ShowCounterEffect();
                     if (player.isDark != enemy.isDark)
-                        enemy.AddStance(30);
+                        enemy.AddStance(25);
                     if (stateInfo.IsName("Jumpattack"))
                     {
                         isCounterHeavy = true;

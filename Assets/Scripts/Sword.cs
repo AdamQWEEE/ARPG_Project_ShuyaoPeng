@@ -31,7 +31,8 @@ public class Sword : MonoBehaviour
                 EnemyBase enemy = other.GetComponent<EnemyBase>();
                 AudioManager.Instance.PlayHit();
 
-                if(enemy.state==EnemyBase.EnemyState.ChangeYinYang) return;
+                if(enemy.state==EnemyBase.EnemyState.ChangeYinYang||enemy.isLockHp) return;
+
 
                 if (playerController.isDark != enemy.isDark) { 
 

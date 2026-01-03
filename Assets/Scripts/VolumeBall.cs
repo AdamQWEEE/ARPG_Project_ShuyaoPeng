@@ -68,6 +68,7 @@ public class VolumeBall : MonoBehaviour
                 Destroy(gameObject);
 
             }
+            AudioManager.Instance.PlayGetImpulse();
         }
     }
 
